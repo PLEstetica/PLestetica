@@ -2,32 +2,37 @@ Guía de Implementación: Sincronización con Google Sheets
 Sigue estos pasos para conectar tu aplicación de turnos con una hoja de cálculo de Google.
 
 Paso 1: Crear la Hoja de Cálculo
-Ve a Google Sheets y crea una nueva hoja en blanco.
-Ponle un nombre, por ejemplo: "Turnos PL Estética".
-Ve al menú Extensiones > Apps Script.
+1. Ve a Google Sheets y crea una nueva hoja en blanco.
+2. Ponle un nombre, por ejemplo: "Turnos PL Estética".
+3. Ve al menú Extensiones > Apps Script.
+
 Paso 2: Configurar el Script
-Se abrirá una nueva pestaña con el editor de código.
-Borra todo el código que aparece por defecto en Code.gs.
-Copia y pega el siguiente código (el mismo que te he generado en 
-google_script.js
-):
+1. Se abrirá una nueva pestaña con el editor de código.
+2. Borra todo el código que aparece por defecto.
+3. Copia y pega el siguiente código:
+
 function doPost(e) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("Turnos");
+    if (!sheet) {
+      sheet = ss.insertSheet("Turnos");
+      setupSheet(sheet);
+    }
+    
     const data = JSON.parse(e.postData.contents);
     
     // Check if it's a test connection
     if (data.type === 'test') {
       return ContentService.createTextOutput(JSON.stringify({ 
         status: 'success', 
-        message: 'Conexión exitosa con Google Sheets' 
+        message: 'Conexión exitosa' 
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
     let receiptLink = "";
     if (data.receipt) {
       try {
-        // Carpeta para comprobantes
         const folderName = "Comprobantes PL Estetica";
         let folder;
         const folders = DriveApp.getFoldersByName(folderName);
@@ -37,7 +42,6 @@ function doPost(e) {
           folder = DriveApp.createFolder(folderName);
         }
 
-        // Decodificar base64
         const parts = data.receipt.split(',');
         const contentType = parts[0].split(':')[1].split(';')[0];
         const decodedData = Utilities.base64Decode(parts[1]);
@@ -51,7 +55,6 @@ function doPost(e) {
       }
     }
 
-    // Normal booking data
     const row = [
       new Date(), // Timestamp
       data.id,
@@ -63,10 +66,11 @@ function doPost(e) {
       data.services.join(', '),
       data.duration,
       data.price,
-      receiptLink, // Enlace al comprobante en Drive
+      receiptLink,
       data.status
     ];
     sheet.appendRow(row);
+    
     return ContentService.createTextOutput(JSON.stringify({ 
       status: 'success', 
       id: data.id 
@@ -78,35 +82,49 @@ function doPost(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 }
-function setupSheet() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+function doGet() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Turnos");
+    if (!sheet) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+    
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    const bookings = rows.map(row => {
+      let booking = {};
+      headers.forEach((header, i) => {
+        booking[header.toLowerCase().replace(/ /g, '_')] = row[i];
+      });
+      return booking;
+    });
+    
+    return ContentService.createTextOutput(JSON.stringify(bookings)).setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({error: error.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function setupSheet(specificSheet) {
+  const sheet = specificSheet || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const headers = ['Timestamp', 'ID Reserva', 'Fecha', 'Hora', 'Cliente', 'Email', 'Teléfono', 'Servicios', 'Duración (min)', 'Precio', 'Comprobante', 'Estado'];
   
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(headers);
-    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#D4AF37').setFontColor('white');
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#8c9d6e').setFontColor('white');
   }
 }
-Guarda el proyecto con el ícono de disquete o Ctrl + S. Ponle un nombre al proyecto si te lo pide.
-Ejecuta la función 
-setupSheet
- una vez para crear los encabezados:
-En la barra de herramientas, selecciona 
-setupSheet
- en el menú desplegable de funciones.
-Haz clic en Ejecutar.
-Te pedirá permisos. Acepta y continúa (si te sale "Google no ha verificado esta aplicación", ve a Configuración avanzada > Ir a ... (inseguro)).
+
 Paso 3: Desplegar como Aplicación Web
-Haz clic en el botón azul Implementar (arriba a la derecha) > Nueva implementación.
-En "Seleccionar tipo", elige la rueda dentada y selecciona Aplicación web.
-Configura lo siguiente:
-Descripción: "API Turnos" (o lo que quieras).
-Ejecutar como: "Yo" (tu cuenta de Google).
-Quién tiene acceso: Cualquier usuario (Esto es CRÍTICO para que funcione sin login).
-Haz clic en Implementar.
-Copia la URL de la aplicación web (termina en /exec).
-Paso 4: Configurar en PL Estética
-Ve a tu aplicación > Admin > Configuración.
-Pega la URL copiada en el campo URL Google Script.
-Haz clic en Guardar Cambios.
-Haz clic en el nuevo botón Probar Conexión para verificar que todo funciona.	
+1. Haz clic en el botón Implementar (arriba a la derecha) > Nueva implementación.
+2. En "Seleccionar tipo", elige Aplicación web.
+3. Ejecutar como: "Yo".
+4. Quién tiene acceso: "Cualquier persona" (IMPORTANTE).
+5. Haz clic en Implementar y copia la URL que termina en /exec.
+
+Paso 4: Configurar en la App
+1. Ve a Admin > Configuración y pega la URL en "URL Google Script".
+2. Guarda los cambios.
+3. ¡LISTO! Ahora tus turnos se guardarán automáticamente y podrás sincronizarlos.

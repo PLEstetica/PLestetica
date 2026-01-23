@@ -150,15 +150,20 @@ const Admin = {
     },
 
     // Agenda Management
-    renderAgenda: () => {
+    renderAgenda: async () => {
         const bookings = DataManager.getBookings().sort((a, b) => {
             if (a.date !== b.date) return a.date.localeCompare(b.date);
             return a.time.localeCompare(b.time);
         });
         const container = document.getElementById('admin-agenda-list');
-        container.innerHTML = '';
+        container.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h4>Listado de Turnos</h4>
+                <button onclick="Admin.syncAgenda()" class="nav-btn" style="margin:0; padding:0.5rem 1rem;">Sincronizar con Drive</button>
+            </div>
+        `;
         if (bookings.length === 0) {
-            container.innerHTML = '<p class="text-muted" style="padding: 2rem; border: 1px dashed var(--border-color); border-radius: 12px; text-align: center;">No hay turnos registrados aún.</p>';
+            container.innerHTML += '<p class="text-muted" style="padding: 2rem; border: 1px dashed var(--border-color); border-radius: 12px; text-align: center;">No hay turnos registrados aún.</p>';
             return;
         }
         const table = document.createElement('table');
@@ -205,6 +210,60 @@ const Admin = {
             const bookings = DataManager.getBookings().filter(b => b.id !== id);
             DataManager.saveBookings(bookings);
             Admin.renderAgenda();
+        }
+    },
+
+    syncAgenda: async () => {
+        const settings = DataManager.getSettings();
+        if (!settings.googleScriptUrl) {
+            alert('Por favor configure la URL de Google Script primero.');
+            return;
+        }
+        const btn = document.querySelector('button[onclick="Admin.syncAgenda()"]');
+        const originalText = btn.textContent;
+        btn.textContent = 'Sincronizando...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(settings.googleScriptUrl);
+            const data = await response.json();
+
+            if (data.error) throw new Error(data.error);
+
+            // Map keys from Google Sheet to our format
+            const mappedBookings = data.map(b => ({
+                id: b.id_reserva || Date.now().toString() + Math.random(),
+                date: b.fecha instanceof Date ? b.fecha.toISOString().split('T')[0] : b.fecha,
+                time: b.hora,
+                duration: parseInt(b.duración_min) || 60,
+                services: (b.servicios || "").split(', ').filter(Boolean),
+                client: {
+                    name: b.cliente || "Sin Nombre",
+                    email: b.email || "",
+                    phone: b.teléfono || ""
+                },
+                price: parseInt(b.precio) || 0,
+                status: b.estado || 'confirmed'
+            }));
+
+            // Merge with local (avoiding duplicates by date and time)
+            const local = DataManager.getBookings();
+            const merged = [...local];
+
+            mappedBookings.forEach(remote => {
+                const exists = merged.some(l => l.date === remote.date && l.time === remote.time);
+                if (!exists) merged.push(remote);
+            });
+
+            DataManager.saveBookings(merged);
+            Admin.renderAgenda();
+            alert('Agenda sincronizada con éxito');
+        } catch (error) {
+            console.error(error);
+            alert('Error al sincronizar: ' + error.message);
+        } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
         }
     },
 
@@ -443,7 +502,7 @@ const Admin = {
             await fetch(url, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({ type: 'test' })
             });
             alert('Solicitud enviada. Verifique si se registró en la hoja de cálculo o si no hubo errores de red.');

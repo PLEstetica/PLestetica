@@ -17,6 +17,15 @@ const App = {
                 App.generateSlots(e.target.value);
             });
         }
+        // Scroll listener for header
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
     },
 
     navigate: (screenId) => {
@@ -445,7 +454,7 @@ const App = {
                     b.style.color = 'var(--forest-green)';
                     b.style.transform = 'scale(1)';
                 });
-                btn.style.backgroundColor = 'var(--forest-green)';
+                btn.style.backgroundColor = 'var(--sage-green)';
                 btn.style.color = '#fff';
                 btn.style.transform = 'scale(1.05)';
                 document.getElementById('booking-time').value = time;
@@ -477,6 +486,12 @@ const App = {
         const settings = DataManager.getSettings();
         const allServices = DataManager.getServices();
         let totalTime = App.calculateTotalDuration(App.state.cart);
+        let totalPrice = 0;
+        App.state.cart.forEach(id => {
+            const srv = allServices.find(s => s.id === id);
+            if (srv) totalPrice += srv.price;
+        });
+
         if (settings.blockedDays.includes(date)) {
             alert('Lo sentimos, el día seleccionado no está disponible.');
             return;
@@ -514,8 +529,19 @@ const App = {
                 return;
             }
         }
+
+        // Calculate 50% deposit
+        const depositAmount = totalPrice * 0.5;
+        const formattedDeposit = depositAmount.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+
         // Show confirmation modal
-        document.getElementById('modal-deposit-message').textContent = settings.depositMessage || 'Para confirmar tu turno es necesario abonar una seña.';
+        let depositMsg = settings.depositMessage || 'Para confirmar tu turno es necesario abonar una seña.';
+        if (depositMsg.includes('{monto_seña}')) {
+            depositMsg = depositMsg.replace('{monto_seña}', formattedDeposit);
+        } else {
+            depositMsg += ` El monto de la seña es de ${formattedDeposit} (50% del total).`;
+        }
+        document.getElementById('modal-deposit-message').textContent = depositMsg;
         const mpLinkBtn = document.getElementById('modal-mp-link');
         const bankContainer = document.getElementById('bank-details-container');
 
@@ -633,7 +659,7 @@ const App = {
                     await fetch(settings.googleScriptUrl, {
                         method: 'POST',
                         mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify(newBooking)
                     });
                 } catch (err) {
@@ -651,16 +677,17 @@ const App = {
                 backgroundColor: 'var(--sage-green)', zIndex: '5000',
                 display: 'flex', flexDirection: 'column', justifyContent: 'center',
                 alignItems: 'center', color: 'var(--forest-green)', padding: '2rem', textAlign: 'center',
+                overflowY: 'auto',
                 backgroundImage: 'linear-gradient(135deg, var(--sage-green-light) 0%, var(--sage-green) 100%)'
             });
 
             successDiv.innerHTML = `
-                <div style="max-width: 600px; background: #fff; padding: 4rem; border-radius: 20px; border: 3px solid var(--forest-green); box-shadow: 0 20px 60px rgba(0,0,0,0.1);">
-                    <div style="font-size: 5rem; color: var(--forest-green); margin-bottom: 2rem;">✓</div>
-                    <h1 style="color: var(--forest-green); font-size: 2.5rem; margin-bottom: 2rem;">¡Reserva Exitosa!</h1>
-                    <p style="font-size: 1.3rem; margin-bottom: 1.5rem; line-height: 1.8;">Tu turno ha sido agendado correctamente.</p>
-                    <p style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 3rem;">Te esperamos el día <strong>${date}</strong> a las <strong>${time}</strong> hs.</p>
-                    <button class="btn-confirm" style="width:auto; padding:1.2rem 3rem;" onclick="location.reload();">VOLVER AL INICIO</button>
+                <div style="max-width: 600px; width: 95%; background: #fff; padding: clamp(1.5rem, 5vw, 4rem); border-radius: 20px; border: 3px solid var(--forest-green); box-shadow: 0 20px 60px rgba(0,0,0,0.1); margin: 2rem auto;">
+                    <div style="font-size: clamp(3rem, 10vw, 5rem); color: var(--forest-green); margin-bottom: 1rem;">✓</div>
+                    <h1 style="color: var(--forest-green); font-size: clamp(1.5rem, 5vw, 2.5rem); margin-bottom: 1rem;">¡Reserva Exitosa!</h1>
+                    <p style="font-size: clamp(1rem, 3vw, 1.3rem); margin-bottom: 1rem; line-height: 1.6;">Tu turno ha sido agendado correctamente.</p>
+                    <p style="font-size: clamp(0.9rem, 2.5vw, 1.1rem); color: var(--text-muted); margin-bottom: 2rem;">Te esperamos el día <strong>${date}</strong> a las <strong>${time}</strong> hs.</p>
+                    <button class="btn-confirm" style="width:auto; padding:1rem 2.5rem;" onclick="location.reload();">VOLVER AL INICIO</button>
                 </div>
             `;
             document.body.appendChild(successDiv);

@@ -23,6 +23,7 @@
     --success: #2e7d32;
     --error: #c62828;
 
+    --forest-green: #1a2e1c;
     /* Spacing & Layout */
     --container-width: 1100px;
     --header-height: 90px;
@@ -116,8 +117,28 @@ header {
     padding: 1rem 0;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 1000;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+header.scrolled {
+    padding: 0.2rem 0;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+header.scrolled .logo-container {
+    margin-bottom: 0.2rem;
+}
+
+header.scrolled .logo-img {
+    width: 40px;
+    height: 40px;
+}
+
+header.scrolled .nav-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.7rem;
 }
 
 .logo-container {
@@ -134,7 +155,7 @@ header {
     background-color: #fff;
     box-shadow: 0 0 25px rgba(26, 46, 28, 0.1);
     border: 3px solid #fff;
-    transition: transform 0.4s ease;
+    transition: all 0.3s ease;
 }
 
 .logo-img:hover {
@@ -519,6 +540,29 @@ td:last-child {
 }
 
 @media (max-width: 600px) {
+    header {
+        padding: 0.5rem 0;
+    }
+
+    .logo-container {
+        margin-bottom: 0.5rem;
+    }
+
+    .logo-img {
+        width: 60px;
+        height: 60px;
+    }
+
+    .nav-bar {
+        gap: 0.5rem;
+    }
+
+    .nav-btn {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+    }
+
     #home-screen h1 {
         font-size: 2.2rem;
     }
