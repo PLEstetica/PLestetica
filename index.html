@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PL Estética - Tu belleza, nuestra prioridad</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="logo-container">
+                <img src="img/logo.jpg" alt="PL Estética Logo" class="logo-img"
+                    onerror="this.src='https://via.placeholder.com/200x200?text=PL+Estetica'">
+            </div>
+            <nav class="nav-bar">
+                <button class="nav-btn" onclick="App.navigate('home')">Inicio</button>
+                <button class="nav-btn" onclick="App.navigate('catalog')">Catálogo</button>
+                <button class="nav-btn" onclick="App.goBack()">Atrás</button>
+                <button class="nav-btn" onclick="App.navigate('admin')">Admin</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Home Screen -->
+        <section id="home-screen" class="screen active">
+            <h1 class="text-center text-gold">Tu belleza, nuestra prioridad</h1>
+            <p class="slogan">Elige tu categoría de servicio para comenzar</p>
+            <div class="category-buttons">
+                <button class="big-btn"
+                    onclick="App.selectMainCategory('Tratamientos (Faciales y Corporales)')">Tratamientos (Faciales y
+                    Corporales)</button>
+                <button class="big-btn" onclick="App.selectMainCategory('Cejas y Pestañas')">Cejas y Pestañas</button>
+                <button class="big-btn" onclick="App.selectMainCategory('Depilación')">Depilación Definitiva</button>
+                <button class="big-btn" onclick="App.selectMainCategory('Combos del Mes')">Combos del Mes</button>
+            </div>
+        </section>
+
+        <!-- Catalog Screen (Coming Soon) -->
+        <section id="catalog-screen" class="screen">
+            <h2 class="text-center">Catálogo</h2>
+            <div class="text-center" style="padding: 4rem 2rem;">
+                <h3 class="text-gold" style="font-size: 2rem; margin-bottom: 1rem;">Próximamente</h3>
+                <p>Estamos actualizando nuestro catálogo de servicios. <br>Por favor consulta nuevamente más tarde.</p>
+            </div>
+        </section>
+
+        <!-- Services Screen -->
+        <section id="services-screen" class="screen">
+            <h2 class="text-center" id="service-category-title">Servicios</h2>
+            <div id="services-container" class="services-grid">
+                <!-- Services will be injected here -->
+            </div>
+            <div style="margin-top: 2rem; text-align: center;">
+                <button class="big-btn" id="btn-continue-booking" style="display: none;"
+                    onclick="App.navigate('booking')">
+                    Continuar a Reserva (<span id="cart-count">0</span>)
+                </button>
+            </div>
+        </section>
+
+        <!-- Booking Screen -->
+        <section id="booking-screen" class="screen">
+            <h2 class="text-center">Confirmar Reserva</h2>
+            <div class="booking-summary">
+                <h3>Detalle de Servicios</h3>
+                <ul id="booking-list" style="list-style: none; margin: 1rem 0; padding: 0;"></ul>
+                <hr style="border-color: var(--border-color); margin: 1rem 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 1.2rem;">
+                    <span>Total Tiempo: <span id="total-time">0 min</span></span>
+                    <span>Total Precio: <span id="total-price">$0</span></span>
+                </div>
+            </div>
+            <form id="booking-form" onsubmit="App.confirmBooking(event)">
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" class="form-control" id="client-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Nacimiento</label>
+                    <input type="date" class="form-control" id="client-dob" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-control" id="client-email" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" class="form-control" id="client-phone" required>
+                </div>
+                <div class="form-group full-width">
+                    <label>Fecha del Turno</label>
+                    <input type="date" class="form-control" id="booking-date" required>
+                </div>
+                <div class="form-group full-width">
+                    <label>Hora del Turno (Seleccione una fecha primero)</label>
+                    <div id="slots-container"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; margin-top: 10px;">
+                        <!-- Slots injected here -->
+                    </div>
+                    <input type="hidden" id="booking-time" required>
+                </div>
+                <button type="submit" class="btn-confirm">CONFIRMAR CITA</button>
+            </form>
+        </section>
+
+        <!-- Admin Screen -->
+        <section id="admin-screen" class="screen">
+            <!-- Login Form -->
+            <div id="admin-login" class="login-form">
+                <h2 class="text-center">Acceso Administrativo</h2>
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" class="form-control" id="admin-user">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" class="form-control" id="admin-pass">
+                </div>
+                <button class="btn-confirm" onclick="Admin.login()">Ingresar</button>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div id="admin-dashboard" class="admin-dashboard" style="display: none;">
+                <aside class="admin-sidebar">
+                    <a class="admin-menu-item active" onclick="Admin.showTab('services')">Servicios</a>
+                    <a class="admin-menu-item" onclick="Admin.showTab('agenda')">Agenda</a>
+                    <a class="admin-menu-item" onclick="Admin.showTab('blocking')">Bloqueos</a>
+                    <a class="admin-menu-item" onclick="Admin.showTab('settings')">Configuración</a>
+                    <a class="admin-menu-item" onclick="Admin.logout()" style="color: var(--error);">Cerrar Sesión</a>
+                </aside>
+                <div class="admin-content">
+                    <!-- Services Tab -->
+                    <div id="tab-services">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3>Gestión de Servicios</h3>
+                            <button class="nav-btn" onclick="Admin.showAddServiceModal()">+ Nuevo Servicio</button>
+                        </div>
+                        <div id="admin-services-list"></div>
+                    </div>
+
+                    <!-- Agenda Tab -->
+                    <div id="tab-agenda" style="display: none;">
+                        <h3>Agenda de Turnos</h3>
+                        <div id="admin-agenda-list"></div>
+                    </div>
+
+                    <!-- Blocking Tab -->
+                    <div id="tab-blocking" style="display: none;">
+                        <h3>Gestión de Bloqueos</h3>
+
+                        <div class="blocking-section">
+                            <h4>Días Completos</h4>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                                <input type="date" id="block-date-input" class="form-control">
+                                <button onclick="Admin.addBlockedDay()" class="btn-confirm"
+                                    style="width: auto; margin: 0;">Bloquear Día</button>
+                            </div>
+                            <div id="blocked-days-list"></div>
+                        </div>
+
+
+                        <div class="blocking-section" style="margin-top: 2rem;">
+                            <h4>Horarios Específicos</h4>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                                <input type="date" id="block-range-date" class="form-control" style="flex: 1;">
+                                <input type="time" id="block-range-start" class="form-control" style="flex: 1;">
+                                <input type="time" id="block-range-end" class="form-control" style="flex: 1;">
+                                <button onclick="Admin.addBlockedRange()" class="btn-confirm"
+                                    style="width: auto; margin: 0;">Bloquear Horario</button>
+                            </div>
+                            <div id="blocked-ranges-list"></div>
+                        </div>
+
+                        <div class="blocking-section" style="margin-top: 2rem;">
+                            <h4>Disponibilidad por Categoría</h4>
+                            <div id="blocked-categories-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div id="tab-settings" style="display: none;">
+                        <h3>Configuración General</h3>
+
+                        <div class="form-group">
+                            <label>Teléfono del Administrador (para notificaciones)</label>
+                            <input type="tel" id="config-phone" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Mensaje de WhatsApp Predefinido</label>
+                            <textarea id="config-message" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>URL Google Apps Script (Integración)</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="url" id="config-script-url" class="form-control">
+                                <button onclick="Admin.testConnection()" class="nav-btn">Probar</button>
+                            </div>
+                        </div>
+
+                        <hr style="border-color: var(--border-color); margin: 2rem 0;">
+
+                        <h3>Pagos y Políticas</h3>
+                        <div class="form-group">
+                            <label>Link de Mercado Pago (Opcional)</label>
+                            <input type="url" id="config-mp-link" class="form-control"
+                                placeholder="https://link.mercadopago...">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Nombre del Banco</label>
+                                <input type="text" id="config-bank-name" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Alias</label>
+                                <input type="text" id="config-bank-alias" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>CBU/CVU</label>
+                                <input type="text" id="config-bank-cbu" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Titular de la Cuenta</label>
+                                <input type="text" id="config-bank-holder" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Mensaje de Seña</label>
+                            <textarea id="config-deposit-message" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Políticas de Reserva</label>
+                            <textarea id="config-policies" class="form-control" rows="6"></textarea>
+                        </div>
+
+                        <button onclick="Admin.saveSettings()" class="btn-confirm">Guardar Configuración</button>
+
+                        <hr style="border-color: var(--border-color); margin: 2rem 0;">
+
+                        <h3>Seguridad</h3>
+                        <div class="form-group">
+                            <label>Cambiar Contraseña de Administrador</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="password" id="new-admin-pass" class="form-control"
+                                    placeholder="Nueva contraseña">
+                                <button onclick="Admin.changePassword()" class="btn-confirm"
+                                    style="width: auto; margin: 0;">Actualizar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Service Modal -->
+                    <div id="service-modal"
+                        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; padding: 20px;">
+                        <div
+                            style="background: #fff; padding: 2.5rem; border-radius: 20px; width: 100%; max-width: 600px; border: 3px solid var(--forest-green); max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+                            <h3 id="modal-title"
+                                style="color: var(--forest-green); margin-bottom: 1.5rem; font-size: 2rem; text-align: center;">
+                                Editar Servicio</h3>
+                            <input type="hidden" id="edit-id">
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label style="color: var(--forest-green); font-weight: bold;">Tipo</label>
+                                    <select class="form-control" id="edit-type">
+                                        <option value="Tratamientos (Faciales y Corporales)">Tratamientos</option>
+                                        <option value="Cejas y Pestañas">Cejas / Pestañas</option>
+                                        <option value="Depilación">Depilación</option>
+                                        <option value="Combos del Mes">Combos del Mes</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: var(--forest-green); font-weight: bold;">Categoría</label>
+                                    <input type="text" class="form-control" id="edit-category" placeholder="Ej: Facial">
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label style="color: var(--forest-green); font-weight: bold;">Nombre del
+                                        Servicio</label>
+                                    <input type="text" class="form-control" id="edit-subcategory">
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: var(--forest-green); font-weight: bold;">Género</label>
+                                    <select class="form-control" id="edit-gender">
+                                        <option value="Unisex">Unisex</option>
+                                        <option value="Femenino">Femenino</option>
+                                        <option value="Masculino">Masculino</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: var(--forest-green); font-weight: bold;">Duración (min)</label>
+                                    <input type="number" class="form-control" id="edit-duration">
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label style="color: var(--forest-green); font-weight: bold;">Precio ($)</label>
+                                    <input type="number" class="form-control" id="edit-price">
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label style="color: var(--forest-green); font-weight: bold;">Descripción (Breve -
+                                        Máx 125 char)</label>
+                                    <textarea class="form-control" id="edit-description" rows="3"
+                                        maxlength="150"></textarea>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                                <button class="nav-btn"
+                                    style="color: var(--forest-green); border-color: var(--forest-green);"
+                                    onclick="document.getElementById('service-modal').style.display='none'">Cancelar</button>
+                                <button class="btn-confirm" style="width: auto; margin: 0; padding: 0.8rem 2rem;"
+                                    onclick="Admin.saveService()">Guardar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Booking Confirmation Modal -->
+        <div id="booking-confirmation-modal"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; z-index: 2000; padding: 20px;">
+            <div
+                style="background: #fff; padding: 2.5rem; border-radius: 20px; width: 100%; max-width: 600px; border: 3px solid var(--forest-green); max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+                <h3 style="color: var(--forest-green); text-align: center; margin-bottom: 1.5rem; font-size: 2rem;">
+                    Confirmación de Reserva</h3>
+
+                <div id="deposit-info" style="margin-bottom: 1.5rem; color: var(--forest-green);">
+                    <p id="modal-deposit-message"
+                        style="margin-bottom: 1.5rem; font-size: 1.1rem; text-align: center; font-weight: 500;">
+                    </p>
+
+                    <div id="bank-details-container"
+                        style="background: rgba(249, 249, 249, 0.8); border: 1px solid rgba(26, 46, 28, 0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; display: none;">
+                        <h4
+                            style="color: var(--forest-green); margin-bottom: 1rem; text-align: center; font-size: 1.2rem;">
+                            Datos para
+                            Transferencia</h4>
+                        <div style="font-size: 1rem; line-height: 1.8;">
+                            <p><strong>Banco:</strong> <span id="modal-bank-name"></span></p>
+                            <p><strong>Alias:</strong> <span id="modal-bank-alias"></span></p>
+                            <p><strong>CBU:</strong> <span id="modal-bank-cbu"></span></p>
+                            <p><strong>Titular:</strong> <span id="modal-bank-holder"></span></p>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-bottom: 1.5rem;">
+                        <a id="modal-mp-link" href="#" target="_blank" class="btn-confirm"
+                            style="display: inline-block; width: auto; background-color: #009EE3; color: white; text-decoration: none; padding: 1rem 2rem; border-radius: 8px; margin-bottom: 1rem; font-size: 1.1rem;">
+                            Pagar con Mercado Pago
+                        </a>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label
+                        style="color: var(--forest-green); font-weight: bold; margin-bottom: 0.5rem; display: block;">Adjuntar
+                        comprobante de pago
+                        (Obligatorio)</label>
+                    <input type="file" id="receipt-file" class="form-control" accept="image/*,application/pdf" required>
+                    <small style="color: #666; display: block; margin-top: 0.3rem;">Formatos aceptados: Imágenes (JPG,
+                        PNG) o PDF.</small>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label
+                        style="color: var(--forest-green); font-weight: bold; margin-bottom: 0.5rem; display: block;">Políticas
+                        de Reserva</label>
+                    <div id="modal-policies-text"
+                        style="background: #f9f9f9; padding: 1rem; border-radius: 8px; height: 150px; overflow-y: auto; font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 1rem; border: 1px solid var(--border-color); color: #333; line-height: 1.5;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.8rem;">
+                        <input type="checkbox" id="accept-policies" style="width: 22px; height: 22px; cursor: pointer;">
+                        <label for="accept-policies"
+                            style="margin: 0; cursor: pointer; color: var(--forest-green); font-size: 1rem;">He leído y
+                            acepto las políticas
+                            de reserva</label>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button class="nav-btn"
+                        style="color: var(--forest-green); border-color: var(--forest-green); padding: 0.8rem 1.5rem;"
+                        onclick="document.getElementById('booking-confirmation-modal').style.display='none'">Volver</button>
+                    <button class="btn-confirm" style="width: auto; margin: 0; padding: 0.8rem 2rem;"
+                        onclick="App.finalizeBooking()">Confirmar y Enviar</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/data.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
