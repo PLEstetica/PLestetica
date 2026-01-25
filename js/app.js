@@ -5,7 +5,8 @@ const App = {
         selectedType: null, // 'Tratamientos' or 'Depilación'
         cart: [], // Array of service IDs
         history: ['home'],
-        activeVariants: {} // Persistent state for grouped services { baseName: selectedId }
+        activeVariants: {}, // Persistent state for grouped services { baseName: selectedId }
+        lastScrollY: 0
     },
 
     init: () => {
@@ -14,17 +15,39 @@ const App = {
             const today = new Date().toISOString().split('T')[0];
             dateInput.min = today;
             dateInput.addEventListener('change', e => {
-                App.generateSlots(e.target.value);
+                const dateStr = e.target.value;
+                const [y, m, d] = dateStr.split('-').map(Number);
+                const selectedDate = new Date(y, m - 1, d);
+
+                if (selectedDate.getDay() === 0) { // 0 is Sunday
+                    alert('Lo sentimos, los domingos no atendemos. Por favor elige otro día.');
+                    e.target.value = '';
+                    document.getElementById('slots-container').innerHTML = '';
+                    return;
+                }
+                App.generateSlots(dateStr);
             });
         }
         // Scroll listener for header
         window.addEventListener('scroll', () => {
             const header = document.querySelector('header');
-            if (window.scrollY > 50) {
+            const currentScrollY = window.scrollY;
+
+            // Smart Header logic
+            if (currentScrollY > 100) {
                 header.classList.add('scrolled');
+                if (currentScrollY > App.state.lastScrollY && currentScrollY > 200) {
+                    // Scrolling down - hide header
+                    header.classList.add('header-hidden');
+                } else {
+                    // Scrolling up - show header
+                    header.classList.remove('header-hidden');
+                }
             } else {
                 header.classList.remove('scrolled');
+                header.classList.remove('header-hidden');
             }
+            App.state.lastScrollY = currentScrollY;
         });
     },
 
@@ -120,6 +143,7 @@ const App = {
             catHeader.textContent = cat;
             catHeader.style.gridColumn = '1 / -1';
             catHeader.style.marginTop = '1.5rem';
+            catHeader.style.fontSize = '1.8rem'; // Increased size for subcategory titles
             catHeader.style.color = 'var(--forest-green)';
             if (isClosed) catHeader.style.opacity = '0.5';
             container.appendChild(catHeader);
@@ -376,6 +400,14 @@ const App = {
             container.innerHTML = '<p class="text-muted" style="grid-column:1/-1;">Seleccione servicios primero.</p>';
             return;
         }
+
+        // Sunday block
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const selectedDate = new Date(y, m - 1, d);
+        if (selectedDate.getDay() === 0) {
+            container.innerHTML = '<p class="text-muted" style="grid-column:1/-1;">Los domingos no atendemos. Por favor seleccione otro día.</p>';
+            return;
+        }
         // Verify category availability
         const settings = DataManager.getSettings();
         const disallowed = App.state.cart.some(id => {
@@ -471,6 +503,7 @@ const App = {
         const phone = document.getElementById('client-phone').value;
         const date = document.getElementById('booking-date').value;
         const time = document.getElementById('booking-time').value;
+
         if (App.state.cart.length === 0) {
             alert('Por favor seleccione al menos un servicio.');
             return;
@@ -479,6 +512,34 @@ const App = {
             alert('Por favor seleccione un horario de turno.');
             return;
         }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('Por favor ingrese un correo electrónico válido.');
+            return;
+        }
+
+        // Phone validation (at least 10 digits)
+        const phoneDigits = phone.replace(/\D/g, '');
+        if (phoneDigits.length < 10) {
+            alert('Por favor ingrese un número de teléfono válido (al menos 10 dígitos incluyendo el código de área).');
+            return;
+        }
+
+        // Age validation (Minimum 16 years)
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        if (age < 16) {
+            alert('Lo sentimos, debes tener al menos 16 años para realizar una reserva de forma independiente.');
+            return;
+        }
+
         if (!name || !dob || !email || !phone || !date) {
             alert('Por favor complete todos los datos del formulario.');
             return;
