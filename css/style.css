@@ -114,12 +114,20 @@ h4 {
 header {
     background: var(--accent-bg);
     border-bottom: 2px solid rgba(26, 46, 28, 0.08);
-    padding: 1rem 0;
-    position: sticky;
+    padding: 0.8rem 0;
+    position: fixed;
+    /* Changed from sticky to fixed */
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 1000;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
-    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), padding 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), background-color 0.3s ease;
+}
+
+body {
+    padding-top: 140px;
+    /* Offset for fixed header */
 }
 
 header.header-hidden {
@@ -127,7 +135,7 @@ header.header-hidden {
 }
 
 header.scrolled {
-    padding: 0.5rem 0;
+    padding: 0.4rem 0;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
 }
 
@@ -136,13 +144,13 @@ header.scrolled .logo-container {
 }
 
 header.scrolled .logo-img {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
 }
 
 header.scrolled .nav-btn {
-    padding: 0.5rem 1.2rem;
-    font-size: 0.75rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.7rem;
 }
 
 .logo-container {
@@ -431,10 +439,33 @@ header.scrolled .nav-btn {
 
 .admin-content {
     background: #fff;
-    padding: 3rem;
+    padding: 2rem;
+    /* Reduced from 3rem */
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
     color: var(--dark-green);
+}
+
+.admin-content h3 {
+    font-size: 1.4rem;
+    /* More compact */
+    margin-bottom: 1.2rem;
+}
+
+.admin-content h4 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.admin-content label {
+    font-size: 0.75rem;
+    /* Smaller labels */
+}
+
+.admin-content .form-control {
+    padding: 0.8rem;
+    /* More compact inputs */
+    font-size: 0.9rem;
 }
 
 table {
@@ -445,15 +476,21 @@ table {
 
 th {
     text-align: left;
-    padding: 1.5rem;
+    padding: 1rem;
+    /* Reduced from 1.5rem */
     color: var(--dark-green);
-    font-size: 0.9rem;
+    font-size: 0.75rem;
+    /* Smaller headers */
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 td {
-    padding: 1.5rem;
+    padding: 1rem;
+    /* Reduced from 1.5rem */
     background: #f9f9f9;
+    font-size: 0.85rem;
+    /* Smaller text */
 }
 
 td:first-child {
@@ -476,14 +513,16 @@ td:last-child {
 
 #booking-confirmation-modal h3,
 #service-modal h3 {
-    font-size: 2.2rem;
-    margin-bottom: 2.5rem;
+    font-size: 1.6rem;
+    /* Reduced from 2.2rem */
+    margin-bottom: 1.5rem;
     color: var(--dark-green);
 }
 
 #booking-confirmation-modal .form-group label,
 #service-modal .form-group label {
-    font-size: 1rem;
+    font-size: 0.85rem;
+    /* Reduced from 1rem */
     color: var(--dark-green);
     font-weight: 700;
 }
