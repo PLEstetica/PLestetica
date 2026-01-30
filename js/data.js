@@ -129,16 +129,19 @@ const DataManager = {
             localStorage.setItem('pl_data_version', DATA_VERSION);
         }
 
-        // Prioritize local storage (user's recent modifications)
-        const data = storedServices || cloudServices;
+        // PRIORIDAD: Nube > Local > Defecto
+        // Esto soluciona que en otros dispositivos se vea lo viejo.
+        const data = cloudServices || storedServices;
 
         if (!data) {
-            localStorage.setItem('pl_services', JSON.stringify(DEFAULT_SERVICES));
+            console.log('No hay datos en cache. Usando DEFAULT_SERVICES.');
             return DEFAULT_SERVICES;
         }
 
         try {
-            return JSON.parse(data);
+            const parsed = JSON.parse(data);
+            console.log('Cargados ' + parsed.length + ' servicios desde ' + (cloudServices ? 'NUBE' : 'LOCAL'));
+            return parsed;
         } catch (e) {
             return DEFAULT_SERVICES;
         }
@@ -154,17 +157,20 @@ const DataManager = {
     },
     syncFromCloud: async () => {
         const settings = DataManager.getSettings();
-        if (!settings.googleScriptUrl) return;
+        if (!settings.googleScriptUrl) return false;
 
         try {
             const response = await fetch(`${settings.googleScriptUrl}?action=getServices`);
             const remoteServices = await response.json();
             if (Array.isArray(remoteServices) && remoteServices.length > 0) {
+                // Guardamos en ambos para asegurar consistencia
                 localStorage.setItem('pl_services_cloud', JSON.stringify(remoteServices));
+                localStorage.setItem('pl_services', JSON.stringify(remoteServices));
+                console.log('Sincronización exitosa: ' + remoteServices.length + ' servicios.');
                 return true;
             }
         } catch (e) {
-            console.warn('Could not sync services from cloud:', e);
+            console.error('Error durante la sincronización fetch:', e);
         }
         return false;
     },

@@ -226,17 +226,11 @@ const Admin = {
         try {
             const success = await DataManager.syncFromCloud();
             if (success) {
-                // Force local cache to take the cloud data
-                const cloudData = localStorage.getItem('pl_services_cloud');
-                if (cloudData) {
-                    localStorage.setItem('pl_services', cloudData);
-                    Admin.renderServicesList();
-                    alert('¡Éxito! Los servicios han sido restaurados desde la nube.');
-                } else {
-                    alert('Se sincronizó pero no se encontraron datos válidos.');
-                }
+                // Forzamos el renderizado
+                Admin.renderServicesList();
+                alert('¡Éxito! Los servicios han sido restaurados desde la nube y guardados permanentemente.');
             } else {
-                alert('No se pudieron obtener datos de la nube. Verifica tu URL de Google Script.');
+                alert('No se pudieron obtener datos de la nube. Verifica tu URL de Google Script en la pestaña Configuración.');
             }
         } catch (error) {
             alert('Error: ' + error.message);
