@@ -111,11 +111,21 @@ const DATA_VERSION = '2026-01-30-v1';
 // Data Manager
 const DataManager = {
     getServices: () => {
+        const storedVersion = localStorage.getItem('pl_data_version');
         const storedServices = localStorage.getItem('pl_services');
         const cloudServices = localStorage.getItem('pl_services_cloud');
 
-        // Prioritize local storage (user's modifications) over cloud-synced data
-        // This ensures the user's latest local changes aren't lost if cloud sync is messy
+        // Force reset if version mismatch (this ensures your GitHub updates are applied)
+        if (storedVersion !== DATA_VERSION) {
+            console.log('Nueva versión detectada. Actualizando servicios por defecto...');
+            localStorage.setItem('pl_services', JSON.stringify(DEFAULT_SERVICES));
+            localStorage.setItem('pl_data_version', DATA_VERSION);
+            // Clear cloud cache to force fetch new version if exists
+            localStorage.removeItem('pl_services_cloud');
+            return DEFAULT_SERVICES;
+        }
+
+        // Prioritize local storage (user's recent modifications)
         const data = storedServices || cloudServices;
 
         if (!data) {
