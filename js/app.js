@@ -11,15 +11,29 @@ const App = {
 
     init: async () => {
         // 1. Intentar sincronizar desde la nube inmediatamente
-        const settings = DataManager.getSettings();
-        if (settings.googleScriptUrl) {
-            console.log('Sincronizando servicios con Google Sheets...');
-            await DataManager.syncFromCloud();
-            // Si estamos en la pantalla de servicios, refrescamos para mostrar los nuevos precios
-            if (App.state.currentScreen === 'services') {
-                App.renderServices(App.state.selectedType);
+        try {
+            const settings = DataManager.getSettings();
+            if (settings.googleScriptUrl) {
+                console.log('Intentando sincronizar con Google Sheets...');
+                await DataManager.syncFromCloud();
+                // Si estamos en la pantalla de servicios, refrescamos
+                if (App.state.currentScreen === 'services') {
+                    App.renderServices(App.state.selectedType);
+                }
             }
+        } catch (err) {
+            console.error('Error en el arranque (sincronización):', err);
         }
+
+        // El resto del inicio debe ejecutarse aunque falle la nube
+        try {
+            App.setupEventListeners();
+        } catch (err) {
+            console.error('Error configurando eventos:', err);
+        }
+    },
+
+    setupEventListeners: () => {
 
         const dateInput = document.getElementById('booking-date');
         if (dateInput) {

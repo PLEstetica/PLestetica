@@ -183,20 +183,33 @@ const DataManager = {
     },
     getSettings: () => {
         const stored = localStorage.getItem('pl_settings');
-        let settings = stored ? JSON.parse(stored) : { ...DEFAULT_SETTINGS };
+        let settings;
 
-        // Si no hay URL guardada pero si hay una en el código (GitHub), la usamos
-        if (!settings.googleScriptUrl && DEFAULT_SETTINGS.googleScriptUrl) {
-            settings.googleScriptUrl = DEFAULT_SETTINGS.googleScriptUrl;
+        try {
+            settings = stored ? JSON.parse(stored) : {};
+        } catch (e) {
+            settings = {};
         }
 
-        // Ensure new fields exist for backward compatibility
-        if (!settings.blockedDays) settings.blockedDays = [];
-        if (!settings.blockedRanges) settings.blockedRanges = [];
-        if (!settings.blockedCategories) settings.blockedCategories = [];
-        if (!settings.categoryModes) settings.categoryModes = {};
-        if (!settings.allowedDates) settings.allowedDates = [];
-        return settings;
+        // Combinar con valores por defecto manualmente para máxima compatibilidad
+        const finalSettings = {};
+        for (let key in DEFAULT_SETTINGS) {
+            finalSettings[key] = settings[key] !== undefined ? settings[key] : DEFAULT_SETTINGS[key];
+        }
+
+        // Si no hay URL guardada en memoria, usamos la que está escrita en el código (GitHub)
+        if (!finalSettings.googleScriptUrl || finalSettings.googleScriptUrl === '') {
+            finalSettings.googleScriptUrl = DEFAULT_SETTINGS.googleScriptUrl;
+        }
+
+        // Asegurar campos obligatorios
+        if (!finalSettings.blockedDays) finalSettings.blockedDays = [];
+        if (!finalSettings.blockedRanges) finalSettings.blockedRanges = [];
+        if (!finalSettings.blockedCategories) finalSettings.blockedCategories = [];
+        if (!finalSettings.categoryModes) finalSettings.categoryModes = {};
+        if (!finalSettings.allowedDates) finalSettings.allowedDates = [];
+
+        return finalSettings;
     },
     saveSettings: (settings) => {
         localStorage.setItem('pl_settings', JSON.stringify(settings));
