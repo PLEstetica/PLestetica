@@ -28,11 +28,22 @@ const Admin = {
     },
 
     // Tab navigation
-    showTab: (tabId) => {
+    showTab: (tabId, event) => {
         document.querySelectorAll('.admin-content > div').forEach(el => el.style.display = 'none');
         document.getElementById(`tab-${tabId}`).style.display = 'block';
         document.querySelectorAll('.admin-menu-item').forEach(el => el.classList.remove('active'));
-        if (event && event.target) event.target.classList.add('active');
+        if (event && event.target) {
+            event.target.classList.add('active');
+        } else {
+            // If no event, try to find the menu item by text or index if needed, 
+            // but usually it's better to just highlight the first one or the one matching the tab
+            const items = document.querySelectorAll('.admin-menu-item');
+            items.forEach(item => {
+                if (item.onclick && item.onclick.toString().includes(`'${tabId}'`)) {
+                    item.classList.add('active');
+                }
+            });
+        }
         // Refresh data when switching tabs
         if (tabId === 'services') Admin.renderServicesList();
         if (tabId === 'agenda') Admin.renderAgenda();
@@ -113,7 +124,7 @@ const Admin = {
         document.getElementById('service-modal').style.display = 'flex';
     },
 
-    saveService: () => {
+    saveService: async () => {
         const id = document.getElementById('edit-id').value;
         const type = document.getElementById('edit-type').value;
         const category = document.getElementById('edit-category').value;
@@ -122,10 +133,12 @@ const Admin = {
         const duration = parseInt(document.getElementById('edit-duration').value);
         const price = parseInt(document.getElementById('edit-price').value);
         const description = document.getElementById('edit-description').value;
+
         if (!category || !subcategory || !duration || !price) {
             alert('Por favor complete todos los campos');
             return;
         }
+
         const services = DataManager.getServices();
         if (id) {
             const index = services.findIndex(s => s.id === id);
@@ -136,16 +149,67 @@ const Admin = {
             const newId = Date.now().toString();
             services.push({ id: newId, type, category, subcategory, gender, duration, price, description });
         }
+
         DataManager.saveServices(services);
         document.getElementById('service-modal').style.display = 'none';
         Admin.renderServicesList();
+
+        // Automatic Cloud Sync
+        const settings = DataManager.getSettings();
+        if (settings.googleScriptUrl) {
+            Admin.syncServicesToCloud(false); // Silent sync
+        }
     },
 
-    deleteService: (id) => {
+    deleteService: async (id) => {
         if (confirm('¿Está seguro de eliminar este servicio?')) {
             const services = DataManager.getServices().filter(s => s.id !== id);
             DataManager.saveServices(services);
             Admin.renderServicesList();
+
+            // Automatic Cloud Sync
+            const settings = DataManager.getSettings();
+            if (settings.googleScriptUrl) {
+                Admin.syncServicesToCloud(false); // Silent sync
+            }
+        }
+    },
+
+    syncServicesToCloud: async (showAlert = true) => {
+        const settings = DataManager.getSettings();
+        if (!settings.googleScriptUrl) {
+            if (showAlert) alert('Configure primero la URL de Google Script en Configuración.');
+            return;
+        }
+
+        const services = DataManager.getServices();
+        const btn = document.querySelector('button[onclick*="syncServicesToCloud"]');
+        const originalText = btn ? btn.textContent : '';
+
+        if (btn && showAlert) {
+            btn.textContent = 'Sincronizando...';
+            btn.disabled = true;
+        }
+
+        try {
+            await fetch(settings.googleScriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'saveServices',
+                    services: services
+                })
+            });
+            if (showAlert) alert('Servicios guardados y sincronizados con éxito.');
+        } catch (error) {
+            console.error('Cloud Sync Error:', error);
+            if (showAlert) alert('Error al sincronizar: ' + error.message);
+        } finally {
+            if (btn && showAlert) {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
         }
     },
 

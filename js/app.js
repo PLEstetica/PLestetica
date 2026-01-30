@@ -9,7 +9,13 @@ const App = {
         lastScrollY: 0
     },
 
-    init: () => {
+    init: async () => {
+        // Attempt to sync services from cloud on startup
+        const hasNewServices = await DataManager.syncFromCloud();
+        if (hasNewServices && App.state.currentScreen === 'services') {
+            App.renderServices(App.state.selectedType);
+        }
+
         const dateInput = document.getElementById('booking-date');
         if (dateInput) {
             const today = new Date().toISOString().split('T')[0];

@@ -131,10 +131,10 @@
             <!-- Admin Dashboard -->
             <div id="admin-dashboard" class="admin-dashboard" style="display: none;">
                 <aside class="admin-sidebar">
-                    <a class="admin-menu-item active" onclick="Admin.showTab('services')">Servicios</a>
-                    <a class="admin-menu-item" onclick="Admin.showTab('agenda')">Agenda</a>
-                    <a class="admin-menu-item" onclick="Admin.showTab('blocking')">Bloqueos</a>
-                    <a class="admin-menu-item" onclick="Admin.showTab('settings')">Configuración</a>
+                    <a class="admin-menu-item active" onclick="Admin.showTab('services', event)">Servicios</a>
+                    <a class="admin-menu-item" onclick="Admin.showTab('agenda', event)">Agenda</a>
+                    <a class="admin-menu-item" onclick="Admin.showTab('blocking', event)">Bloqueos</a>
+                    <a class="admin-menu-item" onclick="Admin.showTab('settings', event)">Configuración</a>
                     <a class="admin-menu-item" onclick="Admin.logout()" style="color: var(--error);">Cerrar Sesión</a>
                 </aside>
                 <div class="admin-content">
@@ -143,7 +143,12 @@
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                             <h3>Gestión de Servicios</h3>
-                            <button class="nav-btn" onclick="Admin.showAddServiceModal()">+ Nuevo Servicio</button>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="nav-btn" onclick="Admin.syncServicesToCloud()"
+                                    style="background: var(--sage-green-dark); color: white; border: none;">Guardar y
+                                    Sincronizar en Nube</button>
+                                <button class="nav-btn" onclick="Admin.showAddServiceModal()">+ Nuevo Servicio</button>
+                            </div>
                         </div>
                         <div id="admin-services-list"></div>
                     </div>

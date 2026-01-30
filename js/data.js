@@ -106,25 +106,54 @@ const DEFAULT_SETTINGS = {
 4. REEMBOLSOS: Las señas no son reembolsables en caso de inasistencia sin aviso previo.`
 };
 
-const DATA_VERSION = '2026-01-22-v1';
+const DATA_VERSION = '2026-01-30-v1';
 
 // Data Manager
 const DataManager = {
     getServices: () => {
-        const storedVersion = localStorage.getItem('pl_data_version');
         const storedServices = localStorage.getItem('pl_services');
+        const cloudServices = localStorage.getItem('pl_services_cloud');
 
-        if (storedVersion !== DATA_VERSION || !storedServices) {
-            // Update data if version mismatch or no data
+        // Prioritize local storage (user's modifications) over cloud-synced data
+        // This ensures the user's latest local changes aren't lost if cloud sync is messy
+        const data = storedServices || cloudServices;
+
+        if (!data) {
             localStorage.setItem('pl_services', JSON.stringify(DEFAULT_SERVICES));
             localStorage.setItem('pl_data_version', DATA_VERSION);
             return DEFAULT_SERVICES;
         }
 
-        return JSON.parse(storedServices);
+        try {
+            return JSON.parse(data);
+        } catch (e) {
+            return DEFAULT_SERVICES;
+        }
     },
     saveServices: (services) => {
-        localStorage.setItem('pl_services', JSON.stringify(services));
+        try {
+            localStorage.setItem('pl_services', JSON.stringify(services));
+            localStorage.setItem('pl_data_version', DATA_VERSION);
+        } catch (e) {
+            console.error('Storage Error:', e);
+            alert('Error al guardar localmente. Espacio insuficiente.');
+        }
+    },
+    syncFromCloud: async () => {
+        const settings = DataManager.getSettings();
+        if (!settings.googleScriptUrl) return;
+
+        try {
+            const response = await fetch(`${settings.googleScriptUrl}?action=getServices`);
+            const remoteServices = await response.json();
+            if (Array.isArray(remoteServices) && remoteServices.length > 0) {
+                localStorage.setItem('pl_services_cloud', JSON.stringify(remoteServices));
+                return true;
+            }
+        } catch (e) {
+            console.warn('Could not sync services from cloud:', e);
+        }
+        return false;
     },
     getAdmin: () => {
         const stored = localStorage.getItem('pl_admin');

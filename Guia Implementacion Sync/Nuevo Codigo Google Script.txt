@@ -1,0 +1,107 @@
+function doPost(e) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const data = JSON.parse(e.postData.contents);
+
+    // --- CASE: SAVE SERVICES ---
+    if (data.action === 'saveServices') {
+      let serviceSheet = ss.getSheetByName("Servicios");
+      if (!serviceSheet) {
+        serviceSheet = ss.insertSheet("Servicios");
+        serviceSheet.appendRow(['ID', 'Tipo', 'Categoría', 'Subcategoría', 'Género', 'Duración', 'Precio', 'Descripción']);
+      }
+      serviceSheet.clearContents();
+      serviceSheet.appendRow(['ID', 'Tipo', 'Categoría', 'Subcategoría', 'Género', 'Duración', 'Precio', 'Descripción']);
+      
+      data.services.forEach(s => {
+        serviceSheet.appendRow([s.id, s.type, s.category, s.subcategory, s.gender, s.duration, s.price, s.description]);
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Servicios actualizados' })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // --- CASE: BOOKING (Default) ---
+    let sheet = ss.getSheetByName("Turnos");
+    if (!sheet) {
+      sheet = ss.insertSheet("Turnos");
+      setupSheet(sheet);
+    }
+    
+    // Check if it's a test connection
+    if (data.type === 'test') {
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Conexión exitosa' })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    let receiptLink = "";
+    if (data.receipt) {
+      try {
+        const folderName = "Comprobantes PL Estetica";
+        let folder;
+        const folders = DriveApp.getFoldersByName(folderName);
+        if (folders.hasNext()) { folder = folders.next(); } else { folder = DriveApp.createFolder(folderName); }
+
+        const parts = data.receipt.split(',');
+        const contentType = parts[0].split(':')[1].split(';')[0];
+        const decodedData = Utilities.base64Decode(parts[1]);
+        const blob = Utilities.newBlob(decodedData, contentType, data.receiptName || "comprobante.png");
+        
+        const file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        receiptLink = file.getUrl();
+      } catch (fError) { receiptLink = "Error: " + fError.toString(); }
+    }
+
+    const row = [
+      new Date(), data.id, data.date, data.time, data.client.name, data.client.email, data.client.phone,
+      data.services.join(', '), data.duration, data.price, receiptLink, data.status
+    ];
+    sheet.appendRow(row);
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success', id: data.id })).setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const action = e.parameter.action;
+
+    // --- CASE: GET SERVICES ---
+    if (action === 'getServices') {
+      const sheet = ss.getSheetByName("Servicios");
+      if (!sheet) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+      const data = sheet.getDataRange().getValues();
+      const rows = data.slice(1);
+      const services = rows.map(row => ({
+        id: String(row[0]), type: row[1], category: row[2], subcategory: row[3], gender: row[4], duration: row[5], price: row[6], description: row[7]
+      }));
+      return ContentService.createTextOutput(JSON.stringify(services)).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // --- CASE: GET BOOKINGS (Default) ---
+    const sheet = ss.getSheetByName("Turnos");
+    if (!sheet) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const rows = data.slice(1);
+    const bookings = rows.map(row => {
+      let booking = {};
+      headers.forEach((header, i) => { booking[header.toLowerCase().replace(/ /g, '_')] = row[i]; });
+      return booking;
+    });
+    return ContentService.createTextOutput(JSON.stringify(bookings)).setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({error: error.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function setupSheet(specificSheet) {
+  const sheet = specificSheet || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const headers = ['Timestamp', 'ID Reserva', 'Fecha', 'Hora', 'Cliente', 'Email', 'Teléfono', 'Servicios', 'Duración (min)', 'Precio', 'Comprobante', 'Estado'];
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#8c9d6e').setFontColor('white');
+  }
+}
