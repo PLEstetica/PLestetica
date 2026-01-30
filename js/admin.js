@@ -213,6 +213,41 @@ const Admin = {
         }
     },
 
+    importServicesFromCloud: async () => {
+        if (!confirm('Esto reemplazará todos los servicios locales con los datos que hay actualmente en Google Sheets. ¿Deseas continuar?')) return;
+
+        const btn = document.querySelector('button[onclick*="importServicesFromCloud"]');
+        const originalText = btn ? btn.textContent : '';
+        if (btn) {
+            btn.textContent = 'Importando...';
+            btn.disabled = true;
+        }
+
+        try {
+            const success = await DataManager.syncFromCloud();
+            if (success) {
+                // Force local cache to take the cloud data
+                const cloudData = localStorage.getItem('pl_services_cloud');
+                if (cloudData) {
+                    localStorage.setItem('pl_services', cloudData);
+                    Admin.renderServicesList();
+                    alert('¡Éxito! Los servicios han sido restaurados desde la nube.');
+                } else {
+                    alert('Se sincronizó pero no se encontraron datos válidos.');
+                }
+            } else {
+                alert('No se pudieron obtener datos de la nube. Verifica tu URL de Google Script.');
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            if (btn) {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+    },
+
     // Agenda Management
     renderAgenda: async () => {
         const bookings = DataManager.getBookings().sort((a, b) => {
