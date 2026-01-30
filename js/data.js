@@ -86,7 +86,7 @@ const DEFAULT_ADMIN = {
 const DEFAULT_SETTINGS = {
     adminPhone: '5491100000000',
     whatsappMessage: 'Hola, quisiera confirmar mi turno para {servicios} el día {fecha} a las {hora}. Total: {total}',
-    googleScriptUrl: '',
+    googleScriptUrl: 'https://script.google.com/macros/s/AKfycbxPMTg9gkMPQLmz-M5hqqDefoVxpi85DqHbkkCeR3QGEUgnCgOOGlBW0F4HRpPzBQY2qQ/exec',
     blockedDays: [],
     blockedRanges: [], // Array of { date, start, end }
     blockedCategories: [], // Array of { date, category }
@@ -106,7 +106,7 @@ const DEFAULT_SETTINGS = {
 4. REEMBOLSOS: Las señas no son reembolsables en caso de inasistencia sin aviso previo.`
 };
 
-const DATA_VERSION = '2026-01-30-v1';
+const DATA_VERSION = '2026-01-30-v2'; // INCREMENTAR ESTO AL SUBIR A GITHUB
 
 // Data Manager
 const DataManager = {
@@ -115,14 +115,18 @@ const DataManager = {
         const storedServices = localStorage.getItem('pl_services');
         const cloudServices = localStorage.getItem('pl_services_cloud');
 
-        // Force reset if version mismatch (this ensures your GitHub updates are applied)
-        if (storedVersion !== DATA_VERSION) {
+        // Force reset only if version is older (allows manual updates via GitHub)
+        if (storedVersion && storedVersion < DATA_VERSION) {
             console.log('Nueva versión detectada. Actualizando servicios por defecto...');
             localStorage.setItem('pl_services', JSON.stringify(DEFAULT_SERVICES));
             localStorage.setItem('pl_data_version', DATA_VERSION);
-            // Clear cloud cache to force fetch new version if exists
             localStorage.removeItem('pl_services_cloud');
             return DEFAULT_SERVICES;
+        }
+
+        // Si es la primera vez (no hay versión), guardamos la actual
+        if (!storedVersion) {
+            localStorage.setItem('pl_data_version', DATA_VERSION);
         }
 
         // Prioritize local storage (user's recent modifications)
@@ -130,7 +134,6 @@ const DataManager = {
 
         if (!data) {
             localStorage.setItem('pl_services', JSON.stringify(DEFAULT_SERVICES));
-            localStorage.setItem('pl_data_version', DATA_VERSION);
             return DEFAULT_SERVICES;
         }
 
@@ -174,7 +177,13 @@ const DataManager = {
     },
     getSettings: () => {
         const stored = localStorage.getItem('pl_settings');
-        let settings = stored ? JSON.parse(stored) : DEFAULT_SETTINGS;
+        let settings = stored ? JSON.parse(stored) : { ...DEFAULT_SETTINGS };
+
+        // Si no hay URL guardada pero si hay una en el código (GitHub), la usamos
+        if (!settings.googleScriptUrl && DEFAULT_SETTINGS.googleScriptUrl) {
+            settings.googleScriptUrl = DEFAULT_SETTINGS.googleScriptUrl;
+        }
+
         // Ensure new fields exist for backward compatibility
         if (!settings.blockedDays) settings.blockedDays = [];
         if (!settings.blockedRanges) settings.blockedRanges = [];
@@ -185,6 +194,10 @@ const DataManager = {
     },
     saveSettings: (settings) => {
         localStorage.setItem('pl_settings', JSON.stringify(settings));
+        // Si la URL cambia, disparamos una sincronización inmediata
+        if (settings.googleScriptUrl) {
+            DataManager.syncFromCloud();
+        }
     },
     getBookings: () => {
         const stored = localStorage.getItem('pl_bookings');

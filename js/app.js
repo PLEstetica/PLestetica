@@ -10,10 +10,15 @@ const App = {
     },
 
     init: async () => {
-        // Attempt to sync services from cloud on startup
-        const hasNewServices = await DataManager.syncFromCloud();
-        if (hasNewServices && App.state.currentScreen === 'services') {
-            App.renderServices(App.state.selectedType);
+        // 1. Intentar sincronizar desde la nube inmediatamente
+        const settings = DataManager.getSettings();
+        if (settings.googleScriptUrl) {
+            console.log('Sincronizando servicios con Google Sheets...');
+            await DataManager.syncFromCloud();
+            // Si estamos en la pantalla de servicios, refrescamos para mostrar los nuevos precios
+            if (App.state.currentScreen === 'services') {
+                App.renderServices(App.state.selectedType);
+            }
         }
 
         const dateInput = document.getElementById('booking-date');

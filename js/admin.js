@@ -619,5 +619,26 @@ const Admin = {
         DataManager.saveAdmin(admin);
         document.getElementById('new-admin-pass').value = '';
         alert('Contraseña actualizada');
+    },
+
+    exportConfigToConsole: () => {
+        const services = DataManager.getServices();
+        const settings = DataManager.getSettings();
+        const output = `
+// --- COPIA ESTE CONTENIDO EN TU ARCHIVO JS/DATA.JS ---
+// --- REEMPLAZA EL ARRAY DEFAULT_SERVICES Y EL OBJETO DEFAULT_SETTINGS ---
+
+const DEFAULT_SERVICES = ${JSON.stringify(services, null, 4)};
+
+const DEFAULT_SETTINGS = ${JSON.stringify(settings, null, 4)};
+        `;
+        console.log(output);
+        const blob = new Blob([output], { type: 'text/javascript' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'data_actualizada.js';
+        a.click();
+        alert('Se ha descargado un archivo "data_actualizada.js". \n\nPara que los cambios sean permanentes en todos los dispositivos: \n1. Abre ese archivo. \n2. Copia el contenido. \n3. Pégalo en tu archivo js/data.js original. \n4. Sube el cambio a GitHub.');
     }
 };
