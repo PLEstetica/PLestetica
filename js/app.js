@@ -16,6 +16,7 @@ const App = {
             if (settings.googleScriptUrl) {
                 console.log('Intentando sincronizar con Google Sheets...');
                 await DataManager.syncFromCloud();
+                await DataManager.syncSettingsFromCloud();
                 // Si estamos en la pantalla de servicios, refrescamos
                 if (App.state.currentScreen === 'services') {
                     App.renderServices(App.state.selectedType);
@@ -523,8 +524,6 @@ const App = {
     confirmBooking: (e) => {
         e.preventDefault();
         const name = document.getElementById('client-name').value;
-        const dob = document.getElementById('client-dob').value;
-        const email = document.getElementById('client-email').value;
         const phone = document.getElementById('client-phone').value;
         const date = document.getElementById('booking-date').value;
         const time = document.getElementById('booking-time').value;
@@ -538,13 +537,6 @@ const App = {
             return;
         }
 
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            alert('Por favor ingrese un correo electrónico válido.');
-            return;
-        }
-
         // Phone validation (at least 10 digits)
         const phoneDigits = phone.replace(/\D/g, '');
         if (phoneDigits.length < 10) {
@@ -552,20 +544,7 @@ const App = {
             return;
         }
 
-        // Age validation (Minimum 16 years)
-        const birthDate = new Date(dob);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
-        if (age < 16) {
-            alert('Lo sentimos, debes tener al menos 16 años para realizar una reserva de forma independiente.');
-            return;
-        }
-
-        if (!name || !dob || !email || !phone || !date) {
+        if (!name || !phone || !date) {
             alert('Por favor complete todos los datos del formulario.');
             return;
         }
@@ -675,8 +654,6 @@ const App = {
         try {
             // Gather data from inputs
             const name = document.getElementById('client-name').value;
-            const dob = document.getElementById('client-dob').value;
-            const email = document.getElementById('client-email').value;
             const phone = document.getElementById('client-phone').value;
             const date = document.getElementById('booking-date').value;
             const time = document.getElementById('booking-time').value;
@@ -715,7 +692,7 @@ const App = {
                 time,
                 duration: totalTime,
                 services: serviceNames,
-                client: { name, dob, email, phone },
+                client: { name, phone },
                 price: totalPrice,
                 status: 'confirmed',
                 receipt: receiptBase64,

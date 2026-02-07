@@ -146,9 +146,29 @@ const DataManager = {
             return DEFAULT_SERVICES;
         }
     },
+    syncSettingsFromCloud: async () => {
+        const settings = DataManager.getSettings();
+        if (!settings.googleScriptUrl) return false;
+
+        try {
+            const response = await fetch(`${settings.googleScriptUrl}?action=getSettings`);
+            const remoteSettings = await response.json();
+            if (remoteSettings && typeof remoteSettings === 'object' && !Array.isArray(remoteSettings)) {
+                // Guardamos en ambos para asegurar consistencia
+                localStorage.setItem('pl_settings_cloud', JSON.stringify(remoteSettings));
+                localStorage.setItem('pl_settings', JSON.stringify(remoteSettings));
+                console.log('Configuración sincronizada desde la nube.');
+                return true;
+            }
+        } catch (e) {
+            console.error('Error durante la sincronización de settings:', e);
+        }
+        return false;
+    },
     saveServices: (services) => {
         try {
             localStorage.setItem('pl_services', JSON.stringify(services));
+            localStorage.setItem('pl_services_cloud', JSON.stringify(services)); // Update both
             localStorage.setItem('pl_data_version', DATA_VERSION);
         } catch (e) {
             console.error('Storage Error:', e);
@@ -183,10 +203,12 @@ const DataManager = {
     },
     getSettings: () => {
         const stored = localStorage.getItem('pl_settings');
+        const cloudSettings = localStorage.getItem('pl_settings_cloud');
         let settings;
 
         try {
-            settings = stored ? JSON.parse(stored) : {};
+            const data = cloudSettings || stored;
+            settings = data ? JSON.parse(data) : {};
         } catch (e) {
             settings = {};
         }
@@ -212,10 +234,17 @@ const DataManager = {
         return finalSettings;
     },
     saveSettings: (settings) => {
-        localStorage.setItem('pl_settings', JSON.stringify(settings));
-        // Si la URL cambia, disparamos una sincronización inmediata
-        if (settings.googleScriptUrl) {
-            DataManager.syncFromCloud();
+        try {
+            localStorage.setItem('pl_settings', JSON.stringify(settings));
+            localStorage.setItem('pl_settings_cloud', JSON.stringify(settings)); // Keep cloud cache updated
+
+            // Si la URL cambia, disparamos una sincronización inmediata
+            if (settings.googleScriptUrl) {
+                DataManager.syncFromCloud();
+                DataManager.syncSettingsFromCloud();
+            }
+        } catch (e) {
+            console.error('Storage Error:', e);
         }
     },
     getBookings: () => {

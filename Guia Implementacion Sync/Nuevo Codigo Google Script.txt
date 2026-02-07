@@ -20,6 +20,19 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Servicios actualizados' })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // --- CASE: SAVE SETTINGS ---
+    if (data.action === 'saveSettings') {
+      let settingsSheet = ss.getSheetByName("Configuracion");
+      if (!settingsSheet) {
+        settingsSheet = ss.insertSheet("Configuracion");
+      }
+      settingsSheet.clearContents();
+      settingsSheet.appendRow(['SettingsJSON']);
+      settingsSheet.appendRow([JSON.stringify(data.settings)]);
+      
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Configuración actualizada' })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // --- CASE: BOOKING (Default) ---
     let sheet = ss.getSheetByName("Turnos");
     if (!sheet) {
@@ -78,6 +91,15 @@ function doGet(e) {
         id: String(row[0]), type: row[1], category: row[2], subcategory: row[3], gender: row[4], duration: row[5], price: row[6], description: row[7]
       }));
       return ContentService.createTextOutput(JSON.stringify(services)).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // --- CASE: GET SETTINGS ---
+    if (action === 'getSettings') {
+      const sheet = ss.getSheetByName("Configuracion");
+      if (!sheet) return ContentService.createTextOutput(JSON.stringify({})).setMimeType(ContentService.MimeType.JSON);
+      const data = sheet.getDataRange().getValues();
+      if (data.length < 2) return ContentService.createTextOutput(JSON.stringify({})).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(data[1][0]).setMimeType(ContentService.MimeType.JSON);
     }
 
     // --- CASE: GET BOOKINGS (Default) ---

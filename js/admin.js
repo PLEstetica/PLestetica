@@ -183,7 +183,7 @@ const Admin = {
         }
 
         const services = DataManager.getServices();
-        const btn = document.querySelector('button[onclick*="syncServicesToCloud"]');
+        const btn = showAlert ? document.querySelector('button[onclick*="syncServicesToCloud"]') : null;
         const originalText = btn ? btn.textContent : '';
 
         if (btn && showAlert) {
@@ -205,6 +205,43 @@ const Admin = {
         } catch (error) {
             console.error('Cloud Sync Error:', error);
             if (showAlert) alert('Error al sincronizar: ' + error.message);
+        } finally {
+            if (btn && showAlert) {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+    },
+
+    syncSettingsToCloud: async (showAlert = true) => {
+        const settings = DataManager.getSettings();
+        if (!settings.googleScriptUrl) {
+            if (showAlert) alert('Configure primero la URL de Google Script en Configuración.');
+            return;
+        }
+
+        const btn = showAlert ? document.querySelector('button[onclick*="saveSettings"]') : null;
+        const originalText = btn ? btn.textContent : '';
+
+        if (btn && showAlert) {
+            btn.textContent = 'Sincronizando...';
+            btn.disabled = true;
+        }
+
+        try {
+            await fetch(settings.googleScriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'saveSettings',
+                    settings: settings
+                })
+            });
+            if (showAlert) console.log('Configuración sincronizada en la nube.');
+        } catch (error) {
+            console.error('Cloud Sync Settings Error:', error);
+            if (showAlert) alert('Error al sincronizar configuración: ' + error.message);
         } finally {
             if (btn && showAlert) {
                 btn.textContent = originalText;
@@ -473,6 +510,7 @@ const Admin = {
             settings.blockedDays.push(date);
             DataManager.saveSettings(settings);
             Admin.renderBlocking();
+            Admin.syncSettingsToCloud(false); // Sync to cloud after blocking
             document.getElementById('block-date-input').value = '';
         } else {
             alert('Este día ya está bloqueado.');
@@ -496,6 +534,7 @@ const Admin = {
         settings.blockedRanges.push({ date, start, end });
         DataManager.saveSettings(settings);
         Admin.renderBlocking();
+        Admin.syncSettingsToCloud(false);
         document.getElementById('block-range-date').value = '';
         document.getElementById('block-range-start').value = '';
         document.getElementById('block-range-end').value = '';
@@ -507,6 +546,7 @@ const Admin = {
             settings.blockedRanges.splice(index, 1);
             DataManager.saveSettings(settings);
             Admin.renderBlocking();
+            Admin.syncSettingsToCloud(false);
         }
     },
 
@@ -516,6 +556,7 @@ const Admin = {
             settings.blockedDays = settings.blockedDays.filter(d => d !== date);
             DataManager.saveSettings(settings);
             Admin.renderBlocking();
+            Admin.syncSettingsToCloud(false);
         }
     },
 
@@ -526,6 +567,7 @@ const Admin = {
         settings.categoryModes[category] = mode;
         DataManager.saveSettings(settings);
         Admin.renderBlocking();
+        Admin.syncSettingsToCloud(false); // Sync to cloud after mode change
     },
 
     addAllowedDate: (category) => {
@@ -540,6 +582,7 @@ const Admin = {
             settings.allowedDates.push({ category, date });
             DataManager.saveSettings(settings);
             Admin.renderBlocking();
+            Admin.syncSettingsToCloud(false); // Sync to cloud after changes
         } else {
             alert('Esta fecha ya está habilitada.');
         }
@@ -551,6 +594,7 @@ const Admin = {
             settings.allowedDates.splice(index, 1);
             DataManager.saveSettings(settings);
             Admin.renderBlocking();
+            Admin.syncSettingsToCloud(false); // Sync to cloud after changes
         }
     },
 
@@ -582,6 +626,7 @@ const Admin = {
         settings.depositMessage = document.getElementById('config-deposit-message').value;
         settings.policiesText = document.getElementById('config-policies').value;
         DataManager.saveSettings(settings);
+        Admin.syncSettingsToCloud(true); // Sync with alert
         alert('Configuración guardada correctamente');
     },
 
