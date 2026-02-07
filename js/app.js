@@ -19,12 +19,7 @@ const App = {
                 const [y, m, d] = dateStr.split('-').map(Number);
                 const selectedDate = new Date(y, m - 1, d);
 
-                if (selectedDate.getDay() === 0) { // 0 is Sunday
-                    alert('Lo sentimos, los domingos no atendemos. Por favor elige otro día.');
-                    e.target.value = '';
-                    document.getElementById('slots-container').innerHTML = '';
-                    return;
-                }
+
                 App.generateSlots(dateStr);
             });
         }
