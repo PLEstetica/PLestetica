@@ -401,13 +401,6 @@ const App = {
             return;
         }
 
-        // Sunday block
-        const [y, m, d] = dateStr.split('-').map(Number);
-        const selectedDate = new Date(y, m - 1, d);
-        if (selectedDate.getDay() === 0) {
-            container.innerHTML = '<p class="text-muted" style="grid-column:1/-1;">Los domingos no atendemos. Por favor seleccione otro día.</p>';
-            return;
-        }
         // Verify category availability
         const settings = DataManager.getSettings();
         const disallowed = App.state.cart.some(id => {
