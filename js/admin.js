@@ -74,6 +74,22 @@ const Admin = {
         `;
         container.appendChild(filterDiv);
 
+        // Cloud Sync Section
+        const syncDiv = document.createElement('div');
+        syncDiv.style.marginBottom = '1.5rem';
+        syncDiv.style.display = 'flex';
+        syncDiv.style.gap = '1rem';
+        syncDiv.style.flexWrap = 'wrap';
+        syncDiv.innerHTML = `
+            <button onclick="Admin.syncServicesToCloud()" class="nav-btn" style="background:var(--forest-green); color:#fff; border:none; font-size:0.7rem; padding: 0.6rem 1rem; width: auto;">
+                GUARDAR Y SINCRONIZAR EN NUBE
+            </button>
+            <button onclick="Admin.importServicesFromCloud()" class="nav-btn" style="background:#fff; color:var(--forest-green); border:1.5px solid var(--forest-green); font-size:0.7rem; padding: 0.6rem 1rem; width: auto;">
+                IMPORTAR DESDE NUBE
+            </button>
+        `;
+        container.appendChild(syncDiv);
+
         const filteredServices = Admin.filterType === 'all'
             ? services
             : services.filter(s => s.type === Admin.filterType);
