@@ -1,5 +1,6 @@
 const Admin = {
     isLoggedIn: false,
+    filterType: 'all',
 
     // Authentication
     login: () => {
@@ -28,21 +29,16 @@ const Admin = {
     },
 
     // Tab navigation
-    showTab: (tabId, event) => {
+    showTab: (tabId) => {
         document.querySelectorAll('.admin-content > div').forEach(el => el.style.display = 'none');
         document.getElementById(`tab-${tabId}`).style.display = 'block';
         document.querySelectorAll('.admin-menu-item').forEach(el => el.classList.remove('active'));
         if (event && event.target) {
-            event.target.classList.add('active');
-        } else {
-            // If no event, try to find the menu item by text or index if needed, 
-            // but usually it's better to just highlight the first one or the one matching the tab
-            const items = document.querySelectorAll('.admin-menu-item');
-            items.forEach(item => {
-                if (item.onclick && item.onclick.toString().includes(`'${tabId}'`)) {
-                    item.classList.add('active');
-                }
-            });
+            if (event.target.classList.contains('admin-menu-item')) {
+                event.target.classList.add('active');
+            } else {
+                event.target.closest('.admin-menu-item')?.classList.add('active');
+            }
         }
         // Refresh data when switching tabs
         if (tabId === 'services') Admin.renderServicesList();
@@ -55,38 +51,76 @@ const Admin = {
         const services = DataManager.getServices();
         const container = document.getElementById('admin-services-list');
         container.innerHTML = '';
-        if (services.length === 0) {
-            container.innerHTML = '<p class="text-muted" style="padding: 2rem; border: 1px dashed var(--border-color); border-radius: 12px; text-align: center;">No hay servicios cargados.</p>';
+
+        // Category Filter
+        const filterDiv = document.createElement('div');
+        filterDiv.style.marginBottom = '1.5rem';
+        filterDiv.style.background = '#f9f9f9';
+        filterDiv.style.padding = '1rem';
+        filterDiv.style.borderRadius = '12px';
+        filterDiv.style.display = 'flex';
+        filterDiv.style.alignItems = 'center';
+        filterDiv.style.gap = '1rem';
+
+        filterDiv.innerHTML = `
+            <label style="font-weight: 700; font-size: 0.8rem; color: var(--forest-green); text-transform: uppercase;">Filtrar por Categoría:</label>
+            <select onchange="Admin.filterType = this.value; Admin.renderServicesList();" class="form-control" style="width: auto; padding: 0.5rem 1rem;">
+                <option value="all" ${Admin.filterType === 'all' ? 'selected' : ''}>TODOS LOS SERVICIOS</option>
+                <option value="Tratamientos (Faciales y Corporales)" ${Admin.filterType === 'Tratamientos (Faciales y Corporales)' ? 'selected' : ''}>Tratamientos</option>
+                <option value="Cejas y Pestañas" ${Admin.filterType === 'Cejas y Pestañas' ? 'selected' : ''}>Cejas y Pestañas</option>
+                <option value="Depilación" ${Admin.filterType === 'Depilación' ? 'selected' : ''}>Depilación</option>
+                <option value="Combos del Mes" ${Admin.filterType === 'Combos del Mes' ? 'selected' : ''}>Combos del Mes</option>
+            </select>
+        `;
+        container.appendChild(filterDiv);
+
+        const filteredServices = Admin.filterType === 'all'
+            ? services
+            : services.filter(s => s.type === Admin.filterType);
+
+        if (filteredServices.length === 0) {
+            const emptyMsg = document.createElement('p');
+            emptyMsg.className = 'text-muted';
+            emptyMsg.style.cssText = 'padding: 2rem; border: 1px dashed var(--border-color); border-radius: 12px; text-align: center;';
+            emptyMsg.textContent = 'No hay servicios en esta categoría.';
+            container.appendChild(emptyMsg);
             return;
         }
+
         const table = document.createElement('table');
         table.innerHTML = `
             <thead>
                 <tr>
-                    <th>Categoría</th>
-                    <th>Servicio</th>
-                    <th>Duración</th>
-                    <th>Precio</th>
-                    <th>Acciones</th>
+                    <th style="width: 25%;">Categoría</th>
+                    <th style="width: 40%;">Servicio</th>
+                    <th style="width: 15%;">Duración</th>
+                    <th style="width: 10%;">Precio</th>
+                    <th style="width: 10%;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                ${services.map(s => `
+                ${filteredServices.map(s => `
                     <tr>
                         <td style="font-weight: 600;">
-                            <span style="color: var(--forest-green); font-size: 0.8rem; text-transform: uppercase;">${s.type}</span><br>
-                            <span>${s.category}</span>
+                            <span style="color: var(--forest-green); font-size: 0.75rem; text-transform: uppercase;">${s.type}</span><br>
+                            <span style="font-size: 0.9rem;">${s.category}</span>
                         </td>
                         <td>
-                            <div style="font-weight: 600;">${s.subcategory}</div>
-                            <div style="color: var(--text-muted); font-size: 0.8rem; max-width: 250px;">${s.description || 'Sin descripción'}</div>
+                            <div style="font-weight: 700; color: var(--forest-green); margin-bottom: 4px;">${s.subcategory}</div>
+                            <div style="color: var(--text-muted); font-size: 0.75rem; line-height: 1.3; overflow-wrap: break-word; word-wrap: break-word; max-width: 300px;">${s.description || 'Sin descripción'}</div>
                         </td>
-                        <td>${s.duration} min</td>
+                        <td style="font-weight: 600;">${s.duration} min</td>
                         <td style="font-weight: 700; color: var(--forest-green);">$${s.price.toLocaleString()}</td>
                         <td>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button onclick="Admin.editService('${s.id}')" style="background:var(--forest-green); color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:600; font-size:0.75rem;">EDITAR</button>
-                                <button onclick="Admin.deleteService('${s.id}')" style="background:rgba(244,67,54,0.1); color:var(--error); border:1px solid var(--error); padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:600; font-size:0.75rem;">BORRAR</button>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch;">
+                                <button onclick="Admin.editService('${s.id}')" 
+                                    style="background:#fff; color:var(--forest-green); border:1.5px solid var(--forest-green); padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.7rem; text-transform:uppercase; transition:all 0.2s;">
+                                    Editar
+                                </button>
+                                <button onclick="Admin.deleteService('${s.id}')" 
+                                    style="background:#fff; color:#c62828; border:1.5px solid #c62828; padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.7rem; text-transform:uppercase; transition:all 0.2s;">
+                                    Borrar
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -110,8 +144,10 @@ const Admin = {
     },
 
     editService: (id) => {
-        const service = DataManager.getServices().find(s => s.id === id);
+        const services = DataManager.getServices();
+        const service = services.find(s => s.id === id);
         if (!service) return;
+
         document.getElementById('modal-title').textContent = 'Editar Servicio';
         document.getElementById('edit-id').value = service.id;
         document.getElementById('edit-type').value = service.type;
@@ -253,54 +289,47 @@ const Admin = {
     importServicesFromCloud: async () => {
         if (!confirm('Esto reemplazará todos los servicios locales con los datos que hay actualmente en Google Sheets. ¿Deseas continuar?')) return;
 
-        const btn = document.querySelector('button[onclick*="importServicesFromCloud"]');
-        const originalText = btn ? btn.textContent : '';
-        if (btn) {
-            btn.textContent = 'Importando...';
-            btn.disabled = true;
+        const settings = DataManager.getSettings();
+        if (!settings.googleScriptUrl) {
+            alert('Configure primero la URL de Google Script en Configuración.');
+            return;
         }
 
         try {
-            const success = await DataManager.syncFromCloud();
-            if (success) {
-                // Forzamos el renderizado
+            const response = await fetch(`${settings.googleScriptUrl}?action=getServices`);
+            const remoteServices = await response.json();
+            if (remoteServices && remoteServices.length > 5) { // Safety check
+                DataManager.saveServices(remoteServices);
                 Admin.renderServicesList();
-                alert('¡Éxito! Los servicios han sido restaurados desde la nube y guardados permanentemente.');
+                alert('Servicios importados con éxito.');
             } else {
-                alert('No se pudieron obtener datos de la nube. Verifica tu URL de Google Script en la pestaña Configuración.');
+                alert('No se encontraron servicios válidos para importar.');
             }
         } catch (error) {
-            alert('Error: ' + error.message);
-        } finally {
-            if (btn) {
-                btn.textContent = originalText;
-                btn.disabled = false;
-            }
+            alert('Error al importar: ' + error.message);
         }
     },
 
     // Agenda Management
-    renderAgenda: async () => {
-        const bookings = DataManager.getBookings().sort((a, b) => {
-            if (a.date !== b.date) return a.date.localeCompare(b.date);
-            return a.time.localeCompare(b.time);
-        });
+    renderAgenda: () => {
+        const bookings = DataManager.getBookings().sort((a, b) => b.date.localeCompare(a.date));
         const container = document.getElementById('admin-agenda-list');
         container.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                <h4>Listado de Turnos</h4>
-                <button onclick="Admin.syncAgenda()" class="nav-btn" style="margin:0; padding:0.5rem 1rem;">Sincronizar con Drive</button>
+            <div style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
+                <button onclick="Admin.syncAgenda()" class="nav-btn" style="font-size: 0.75rem;">Sincronizar con Google Sheets</button>
             </div>
         `;
+
         if (bookings.length === 0) {
-            container.innerHTML += '<p class="text-muted" style="padding: 2rem; border: 1px dashed var(--border-color); border-radius: 12px; text-align: center;">No hay turnos registrados aún.</p>';
+            container.innerHTML += '<p class="text-muted">No hay turnos registrados.</p>';
             return;
         }
+
         const table = document.createElement('table');
         table.innerHTML = `
             <thead>
                 <tr>
-                    <th>Fecha / Hora</th>
+                    <th>Fecha/Hora</th>
                     <th>Cliente</th>
                     <th>Servicios</th>
                     <th>Precio</th>
@@ -310,23 +339,20 @@ const Admin = {
             <tbody>
                 ${bookings.map(b => `
                     <tr>
-                        <td style="font-weight: 600;">
-                            <span style="color: var(--forest-green);">${b.date}</span><br>
-                            <span style="font-size: 1.2rem;">${b.time} hs</span>
+                        <td>
+                            <div style="font-weight: 600;">${b.date}</div>
+                            <div style="color: var(--forest-green); font-size: 0.85rem;">${b.time}</div>
                         </td>
                         <td>
                             <div style="font-weight: 600;">${b.client.name}</div>
-                            <div style="color: var(--text-muted); font-size: 0.85rem;">Tel: ${b.client.phone}</div>
-                            <div style="color: var(--text-muted); font-size: 0.85rem;">Email: ${b.client.email}</div>
-                        </td>
-                        <td style="max-width: 250px; font-size: 0.9rem;">
-                            ${b.services.map(s => `<span style="display:inline-block; background:rgba(249, 249, 249, 0.9); padding:2px 8px; border-radius:4px; margin:2px; border:1px solid rgba(26, 46, 28, 0.1);">${s}</span>`).join('')}
-                        </td>
-                        <td style="font-weight: 700; color: var(--forest-green); font-size: 1.1rem;">
-                            $${b.price.toLocaleString()}
+                            <div style="font-size: 0.8rem;">${b.client.phone}</div>
                         </td>
                         <td>
-                            <button onclick="Admin.deleteBooking('${b.id}')" style="background:var(--error); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem; transition: all 0.2s ease;">CANCELAR</button>
+                            <div style="font-size: 0.85rem; max-width: 250px;">${b.services.join(', ')}</div>
+                        </td>
+                        <td style="font-weight: 700;">$${(b.price || 0).toLocaleString()}</td>
+                        <td>
+                            <button onclick="Admin.deleteBooking('${b.id}')" style="color:var(--error); background:none; border:none; cursor:pointer; font-weight:600; font-size:0.75rem;">ELIMINAR</button>
                         </td>
                     </tr>
                 `).join('')}
@@ -336,7 +362,7 @@ const Admin = {
     },
 
     deleteBooking: (id) => {
-        if (confirm('¿Está seguro de cancelar este turno?')) {
+        if (confirm('¿Eliminar esta reserva local? (No se borrará de Google Sheets)')) {
             const bookings = DataManager.getBookings().filter(b => b.id !== id);
             DataManager.saveBookings(bookings);
             Admin.renderAgenda();
@@ -459,7 +485,7 @@ const Admin = {
 
             wrapper.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                    <h5 style="margin:0; font-size:1.1rem; color:var(--forest-green);">${cat}</h5>
+                    <h5 style="margin:0; font-size:0.95rem; color:var(--forest-green);">${cat}</h5>
                     <select onchange="Admin.setCategoryMode('${cat}', this.value)" style="padding:5px; border-radius:4px;">
                         <option value="open" ${mode === 'open' ? 'selected' : ''}>Siempre Abierto</option>
                         <option value="manual" ${mode === 'manual' ? 'selected' : ''}>Fechas Específicas</option>
@@ -560,7 +586,6 @@ const Admin = {
         }
     },
 
-    // Category Blocking Management
     // Category Availability Management
     setCategoryMode: (category, mode) => {
         const settings = DataManager.getSettings();
@@ -633,51 +658,32 @@ const Admin = {
     testConnection: async () => {
         const url = document.getElementById('config-script-url').value;
         if (!url) {
-            alert('Por favor ingrese una URL primero');
+            alert('Ingrese una URL primero');
             return;
         }
+
         try {
-            await fetch(url, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ type: 'test' })
-            });
-            alert('Solicitud enviada. Verifique si se registró en la hoja de cálculo o si no hubo errores de red.');
+            const response = await fetch(url + '?action=getServices');
+            if (response.ok) {
+                alert('¡Conexión exitosa! Google Sheets está respondiendo.');
+            } else {
+                alert('Error de conexión: ' + response.statusText);
+            }
         } catch (error) {
-            console.error(error);
-            alert('Error al conectar: ' + error.message);
+            alert('Error de conexión: Asegúrese de que la URL sea correcta y tenga permisos de acceso público.');
         }
     },
 
     changePassword: () => {
         const newPass = document.getElementById('new-admin-pass').value;
-        if (!newPass) return;
+        if (!newPass) {
+            alert('Ingrese una nueva contraseña');
+            return;
+        }
         const admin = DataManager.getAdmin();
         admin.password = newPass;
         DataManager.saveAdmin(admin);
         document.getElementById('new-admin-pass').value = '';
-        alert('Contraseña actualizada');
-    },
-
-    exportConfigToConsole: () => {
-        const services = DataManager.getServices();
-        const settings = DataManager.getSettings();
-        const output = `
-// --- COPIA ESTE CONTENIDO EN TU ARCHIVO JS/DATA.JS ---
-// --- REEMPLAZA EL ARRAY DEFAULT_SERVICES Y EL OBJETO DEFAULT_SETTINGS ---
-
-const DEFAULT_SERVICES = ${JSON.stringify(services, null, 4)};
-
-const DEFAULT_SETTINGS = ${JSON.stringify(settings, null, 4)};
-        `;
-        console.log(output);
-        const blob = new Blob([output], { type: 'text/javascript' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'data_actualizada.js';
-        a.click();
-        alert('Se ha descargado un archivo "data_actualizada.js". \n\nPara que los cambios sean permanentes en todos los dispositivos: \n1. Abre ese archivo. \n2. Copia el contenido. \n3. Pégalo en tu archivo js/data.js original. \n4. Sube el cambio a GitHub.');
+        alert('Contraseña actualizada con éxito');
     }
 };

@@ -9,33 +9,7 @@ const App = {
         lastScrollY: 0
     },
 
-    init: async () => {
-        // 1. Intentar sincronizar desde la nube inmediatamente
-        try {
-            const settings = DataManager.getSettings();
-            if (settings.googleScriptUrl) {
-                console.log('Intentando sincronizar con Google Sheets...');
-                await DataManager.syncFromCloud();
-                await DataManager.syncSettingsFromCloud();
-                // Si estamos en la pantalla de servicios, refrescamos
-                if (App.state.currentScreen === 'services') {
-                    App.renderServices(App.state.selectedType);
-                }
-            }
-        } catch (err) {
-            console.error('Error en el arranque (sincronización):', err);
-        }
-
-        // El resto del inicio debe ejecutarse aunque falle la nube
-        try {
-            App.setupEventListeners();
-        } catch (err) {
-            console.error('Error configurando eventos:', err);
-        }
-    },
-
-    setupEventListeners: () => {
-
+    init: () => {
         const dateInput = document.getElementById('booking-date');
         if (dateInput) {
             const today = new Date().toISOString().split('T')[0];
@@ -169,7 +143,7 @@ const App = {
             catHeader.textContent = cat;
             catHeader.style.gridColumn = '1 / -1';
             catHeader.style.marginTop = '1.5rem';
-            catHeader.style.fontSize = '1.8rem'; // Increased size for subcategory titles
+            catHeader.style.fontSize = '2.1rem'; // Increased for subcategory titles as requested
             catHeader.style.color = 'var(--forest-green)';
             if (isClosed) catHeader.style.opacity = '0.5';
             container.appendChild(catHeader);
@@ -524,6 +498,8 @@ const App = {
     confirmBooking: (e) => {
         e.preventDefault();
         const name = document.getElementById('client-name').value;
+        const dob = document.getElementById('client-dob').value;
+        const email = document.getElementById('client-email').value;
         const phone = document.getElementById('client-phone').value;
         const date = document.getElementById('booking-date').value;
         const time = document.getElementById('booking-time').value;
@@ -537,6 +513,13 @@ const App = {
             return;
         }
 
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('Por favor ingrese un correo electrónico válido.');
+            return;
+        }
+
         // Phone validation (at least 10 digits)
         const phoneDigits = phone.replace(/\D/g, '');
         if (phoneDigits.length < 10) {
@@ -544,10 +527,24 @@ const App = {
             return;
         }
 
-        if (!name || !phone || !date) {
+        // Age validation (Minimum 16 years)
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        if (age < 16) {
+            alert('Lo sentimos, debes tener al menos 16 años para realizar una reserva de forma independiente.');
+            return;
+        }
+
+        if (!name || !dob || !email || !phone || !date) {
             alert('Por favor complete todos los datos del formulario.');
             return;
         }
+
         const settings = DataManager.getSettings();
         const allServices = DataManager.getServices();
         let totalTime = App.calculateTotalDuration(App.state.cart);
@@ -654,6 +651,8 @@ const App = {
         try {
             // Gather data from inputs
             const name = document.getElementById('client-name').value;
+            const dob = document.getElementById('client-dob').value;
+            const email = document.getElementById('client-email').value;
             const phone = document.getElementById('client-phone').value;
             const date = document.getElementById('booking-date').value;
             const time = document.getElementById('booking-time').value;
@@ -692,7 +691,7 @@ const App = {
                 time,
                 duration: totalTime,
                 services: serviceNames,
-                client: { name, phone },
+                client: { name, dob, email, phone },
                 price: totalPrice,
                 status: 'confirmed',
                 receipt: receiptBase64,

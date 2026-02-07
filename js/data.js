@@ -86,7 +86,7 @@ const DEFAULT_ADMIN = {
 const DEFAULT_SETTINGS = {
     adminPhone: '5491100000000',
     whatsappMessage: 'Hola, quisiera confirmar mi turno para {servicios} el día {fecha} a las {hora}. Total: {total}',
-    googleScriptUrl: 'https://script.google.com/macros/s/AKfycbxPMTg9gkMPQLmz-M5hqqDefoVxpi85DqHbkkCeR3QGEUgnCgOOGlBW0F4HRpPzBQY2qQ/exec',
+    googleScriptUrl: '',
     blockedDays: [],
     blockedRanges: [], // Array of { date, start, end }
     blockedCategories: [], // Array of { date, category }
@@ -106,93 +106,25 @@ const DEFAULT_SETTINGS = {
 4. REEMBOLSOS: Las señas no son reembolsables en caso de inasistencia sin aviso previo.`
 };
 
-const DATA_VERSION = '2026-01-30-v2'; // INCREMENTAR ESTO AL SUBIR A GITHUB
+const DATA_VERSION = '2026-01-22-v1';
 
 // Data Manager
 const DataManager = {
     getServices: () => {
         const storedVersion = localStorage.getItem('pl_data_version');
         const storedServices = localStorage.getItem('pl_services');
-        const cloudServices = localStorage.getItem('pl_services_cloud');
 
-        // Force reset only if version is older (allows manual updates via GitHub)
-        if (storedVersion && storedVersion < DATA_VERSION) {
-            console.log('Nueva versión detectada. Actualizando servicios por defecto...');
+        if (storedVersion !== DATA_VERSION || !storedServices) {
+            // Update data if version mismatch or no data
             localStorage.setItem('pl_services', JSON.stringify(DEFAULT_SERVICES));
             localStorage.setItem('pl_data_version', DATA_VERSION);
-            localStorage.removeItem('pl_services_cloud');
             return DEFAULT_SERVICES;
         }
 
-        // Si es la primera vez (no hay versión), guardamos la actual
-        if (!storedVersion) {
-            localStorage.setItem('pl_data_version', DATA_VERSION);
-        }
-
-        // PRIORIDAD: Nube > Local > Defecto
-        // Esto soluciona que en otros dispositivos se vea lo viejo.
-        const data = cloudServices || storedServices;
-
-        if (!data) {
-            console.log('No hay datos en cache. Usando DEFAULT_SERVICES.');
-            return DEFAULT_SERVICES;
-        }
-
-        try {
-            const parsed = JSON.parse(data);
-            console.log('Cargados ' + parsed.length + ' servicios desde ' + (cloudServices ? 'NUBE' : 'LOCAL'));
-            return parsed;
-        } catch (e) {
-            return DEFAULT_SERVICES;
-        }
-    },
-    syncSettingsFromCloud: async () => {
-        const settings = DataManager.getSettings();
-        if (!settings.googleScriptUrl) return false;
-
-        try {
-            const response = await fetch(`${settings.googleScriptUrl}?action=getSettings`);
-            const remoteSettings = await response.json();
-            if (remoteSettings && typeof remoteSettings === 'object' && !Array.isArray(remoteSettings)) {
-                // Guardamos en ambos para asegurar consistencia
-                localStorage.setItem('pl_settings_cloud', JSON.stringify(remoteSettings));
-                localStorage.setItem('pl_settings', JSON.stringify(remoteSettings));
-                console.log('Configuración sincronizada desde la nube.');
-                return true;
-            }
-        } catch (e) {
-            console.error('Error durante la sincronización de settings:', e);
-        }
-        return false;
+        return JSON.parse(storedServices);
     },
     saveServices: (services) => {
-        try {
-            localStorage.setItem('pl_services', JSON.stringify(services));
-            localStorage.setItem('pl_services_cloud', JSON.stringify(services)); // Update both
-            localStorage.setItem('pl_data_version', DATA_VERSION);
-        } catch (e) {
-            console.error('Storage Error:', e);
-            alert('Error al guardar localmente. Espacio insuficiente.');
-        }
-    },
-    syncFromCloud: async () => {
-        const settings = DataManager.getSettings();
-        if (!settings.googleScriptUrl) return false;
-
-        try {
-            const response = await fetch(`${settings.googleScriptUrl}?action=getServices`);
-            const remoteServices = await response.json();
-            if (Array.isArray(remoteServices) && remoteServices.length > 0) {
-                // Guardamos en ambos para asegurar consistencia
-                localStorage.setItem('pl_services_cloud', JSON.stringify(remoteServices));
-                localStorage.setItem('pl_services', JSON.stringify(remoteServices));
-                console.log('Sincronización exitosa: ' + remoteServices.length + ' servicios.');
-                return true;
-            }
-        } catch (e) {
-            console.error('Error durante la sincronización fetch:', e);
-        }
-        return false;
+        localStorage.setItem('pl_services', JSON.stringify(services));
     },
     getAdmin: () => {
         const stored = localStorage.getItem('pl_admin');
@@ -203,49 +135,17 @@ const DataManager = {
     },
     getSettings: () => {
         const stored = localStorage.getItem('pl_settings');
-        const cloudSettings = localStorage.getItem('pl_settings_cloud');
-        let settings;
-
-        try {
-            const data = cloudSettings || stored;
-            settings = data ? JSON.parse(data) : {};
-        } catch (e) {
-            settings = {};
-        }
-
-        // Combinar con valores por defecto manualmente para máxima compatibilidad
-        const finalSettings = {};
-        for (let key in DEFAULT_SETTINGS) {
-            finalSettings[key] = settings[key] !== undefined ? settings[key] : DEFAULT_SETTINGS[key];
-        }
-
-        // Si no hay URL guardada en memoria, usamos la que está escrita en el código (GitHub)
-        if (!finalSettings.googleScriptUrl || finalSettings.googleScriptUrl === '') {
-            finalSettings.googleScriptUrl = DEFAULT_SETTINGS.googleScriptUrl;
-        }
-
-        // Asegurar campos obligatorios
-        if (!finalSettings.blockedDays) finalSettings.blockedDays = [];
-        if (!finalSettings.blockedRanges) finalSettings.blockedRanges = [];
-        if (!finalSettings.blockedCategories) finalSettings.blockedCategories = [];
-        if (!finalSettings.categoryModes) finalSettings.categoryModes = {};
-        if (!finalSettings.allowedDates) finalSettings.allowedDates = [];
-
-        return finalSettings;
+        let settings = stored ? JSON.parse(stored) : DEFAULT_SETTINGS;
+        // Ensure new fields exist for backward compatibility
+        if (!settings.blockedDays) settings.blockedDays = [];
+        if (!settings.blockedRanges) settings.blockedRanges = [];
+        if (!settings.blockedCategories) settings.blockedCategories = [];
+        if (!settings.categoryModes) settings.categoryModes = {};
+        if (!settings.allowedDates) settings.allowedDates = [];
+        return settings;
     },
     saveSettings: (settings) => {
-        try {
-            localStorage.setItem('pl_settings', JSON.stringify(settings));
-            localStorage.setItem('pl_settings_cloud', JSON.stringify(settings)); // Keep cloud cache updated
-
-            // Si la URL cambia, disparamos una sincronización inmediata
-            if (settings.googleScriptUrl) {
-                DataManager.syncFromCloud();
-                DataManager.syncSettingsFromCloud();
-            }
-        } catch (e) {
-            console.error('Storage Error:', e);
-        }
+        localStorage.setItem('pl_settings', JSON.stringify(settings));
     },
     getBookings: () => {
         const stored = localStorage.getItem('pl_bookings');

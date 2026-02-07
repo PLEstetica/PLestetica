@@ -85,6 +85,14 @@
                     <input type="text" class="form-control" id="client-name" required>
                 </div>
                 <div class="form-group">
+                    <label>Fecha de Nacimiento</label>
+                    <input type="date" class="form-control" id="client-dob" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-control" id="client-email" required>
+                </div>
+                <div class="form-group">
                     <label>Teléfono</label>
                     <input type="tel" class="form-control" id="client-phone" required>
                 </div>
@@ -123,10 +131,10 @@
             <!-- Admin Dashboard -->
             <div id="admin-dashboard" class="admin-dashboard" style="display: none;">
                 <aside class="admin-sidebar">
-                    <a class="admin-menu-item active" onclick="Admin.showTab('services', event)">Servicios</a>
-                    <a class="admin-menu-item" onclick="Admin.showTab('agenda', event)">Agenda</a>
-                    <a class="admin-menu-item" onclick="Admin.showTab('blocking', event)">Bloqueos</a>
-                    <a class="admin-menu-item" onclick="Admin.showTab('settings', event)">Configuración</a>
+                    <a class="admin-menu-item active" onclick="Admin.showTab('services')">Servicios</a>
+                    <a class="admin-menu-item" onclick="Admin.showTab('agenda')">Agenda</a>
+                    <a class="admin-menu-item" onclick="Admin.showTab('blocking')">Bloqueos</a>
+                    <a class="admin-menu-item" onclick="Admin.showTab('settings')">Configuración</a>
                     <a class="admin-menu-item" onclick="Admin.logout()" style="color: var(--error);">Cerrar Sesión</a>
                 </aside>
                 <div class="admin-content">
@@ -135,15 +143,7 @@
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                             <h3>Gestión de Servicios</h3>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="nav-btn" onclick="Admin.syncServicesToCloud()"
-                                    style="background: var(--sage-green-dark); color: white; border: none;">Guardar y
-                                    Sincronizar en Nube</button>
-                                <button class="nav-btn" onclick="Admin.importServicesFromCloud()"
-                                    style="background: var(--sage-green); color: white; border: none;">Importar desde
-                                    Nube</button>
-                                <button class="nav-btn" onclick="Admin.showAddServiceModal()">+ Nuevo Servicio</button>
-                            </div>
+                            <button class="nav-btn" onclick="Admin.showAddServiceModal()">+ Nuevo Servicio</button>
                         </div>
                         <div id="admin-services-list"></div>
                     </div>
@@ -245,9 +245,6 @@
                         </div>
 
                         <button onclick="Admin.saveSettings()" class="btn-confirm">Guardar Configuración</button>
-                        <button onclick="Admin.exportConfigToConsole()" class="nav-btn"
-                            style="margin-top: 1rem; width: 100%; height: auto; padding: 1rem; background: var(--sage-green-dark); color: white; border: none;">Exportar
-                            Config para GitHub (Permanente)</button>
 
                         <hr style="border-color: var(--border-color); margin: 2rem 0;">
 
@@ -401,9 +398,9 @@
         </div>
     </main>
 
-    <script src="js/data.js?v=20260130v2"></script>
-    <script src="js/admin.js?v=20260130v2"></script>
-    <script src="js/app.js?v=20260130v2"></script>
+    <script src="js/data.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/app.js"></script>
 </body>
 
 </html>

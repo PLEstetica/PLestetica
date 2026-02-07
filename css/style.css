@@ -234,15 +234,15 @@ header.scrolled .nav-btn {
     background: var(--accent-bg);
     border: 2px solid rgba(26, 46, 28, 0.1);
     color: var(--text-on-card);
-    padding: 3.5rem;
-    font-size: 1.7rem;
-    /* Increased from 1.6rem */
+    padding: 3rem;
+    font-size: 1.9rem;
+    /* Increased from 1.7rem */
     font-family: var(--font-serif);
     font-weight: 700;
     cursor: pointer;
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     border-radius: var(--border-radius);
-    min-width: 340px;
+    min-width: 320px;
     box-shadow: 0 15px 35px rgba(26, 46, 28, 0.05);
 }
 
@@ -257,18 +257,29 @@ header.scrolled .nav-btn {
 /* Services Screen */
 .services-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 2.5rem;
-    margin-top: 4rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    /* Reduced min-width to avoid overflow on small mobiles */
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+#service-category-title {
+    font-size: 3rem;
+    /* Increased for category title */
+    margin-bottom: 0.5rem;
 }
 
 .service-card {
     background: #fff;
     border: 1px solid var(--border-color);
-    padding: 2.5rem;
+    padding: 2rem;
+    /* Slightly reduced padding to give more space for text */
     border-radius: var(--border-radius);
     transition: all 0.3s ease;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .service-card:hover {
@@ -284,21 +295,30 @@ header.scrolled .nav-btn {
 
 .service-card h3 {
     font-size: 1.6rem;
-    /* Increased from 1.5rem */
     margin-bottom: 1rem;
     color: var(--dark-green);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    /* Force break even on long strings like slashes */
+    word-break: normal;
+    hyphens: auto;
 }
 
 .service-description {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: var(--text-muted);
     margin-bottom: 2rem;
+    line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .service-meta {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
     border-top: 1px solid var(--border-color);
     padding-top: 1.5rem;
 }
@@ -411,7 +431,7 @@ header.scrolled .nav-btn {
 
 .admin-sidebar {
     background: #fff;
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
     height: fit-content;
@@ -420,13 +440,14 @@ header.scrolled .nav-btn {
 
 .admin-menu-item {
     display: block;
-    padding: 1.2rem;
+    padding: 0.8rem 1.2rem;
     border-radius: 12px;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.5rem;
     background: #f9f9f9;
     color: var(--dark-green);
     text-decoration: none;
     font-weight: 600;
+    font-size: 0.85rem;
     border: 1px solid transparent;
     transition: all 0.3s ease;
 }
@@ -447,25 +468,28 @@ header.scrolled .nav-btn {
 }
 
 .admin-content h3 {
-    font-size: 1.4rem;
-    /* More compact */
-    margin-bottom: 1.2rem;
+    font-size: 1.1rem;
+    /* Further reduced from 1.25rem */
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
 }
 
 .admin-content h4 {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
+    font-size: 1rem;
+    /* Reduced from 1.1rem */
+    margin-bottom: 0.8rem;
 }
 
 .admin-content label {
-    font-size: 0.75rem;
-    /* Smaller labels */
+    font-size: 0.7rem;
+    /* Reduced from 0.75rem */
 }
 
 .admin-content .form-control {
-    padding: 0.8rem;
-    /* More compact inputs */
-    font-size: 0.9rem;
+    padding: 0.7rem;
+    /* More compact */
+    font-size: 0.85rem;
+    /* Reduced from 0.9rem */
 }
 
 table {
@@ -486,11 +510,14 @@ th {
 }
 
 td {
-    padding: 1rem;
-    /* Reduced from 1.5rem */
+    padding: 0.8rem;
+    /* Reduced from 1rem */
     background: #f9f9f9;
-    font-size: 0.85rem;
-    /* Smaller text */
+    font-size: 0.8rem;
+    /* Reduced from 0.85rem */
+    word-break: break-word;
+    /* Ensure long words in tables don't break layout */
+    vertical-align: top;
 }
 
 td:first-child {
