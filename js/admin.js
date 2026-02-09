@@ -312,7 +312,7 @@ const Admin = {
         }
 
         try {
-            const response = await fetch(`${settings.googleScriptUrl}?action=getServices`);
+            const response = await fetch(`${settings.googleScriptUrl}?action=getServices&t=${Date.now()}`);
             const remoteServices = await response.json();
             if (remoteServices && remoteServices.length > 5) { // Safety check
                 DataManager.saveServices(remoteServices);
@@ -397,7 +397,7 @@ const Admin = {
         btn.disabled = true;
 
         try {
-            const response = await fetch(settings.googleScriptUrl);
+            const response = await fetch(`${settings.googleScriptUrl}?t=${Date.now()}`);
             const data = await response.json();
 
             if (data.error) throw new Error(data.error);

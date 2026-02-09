@@ -111,20 +111,53 @@ const DATA_VERSION = '2026-01-22-v1';
 // Data Manager
 const DataManager = {
     getServices: () => {
-        const storedVersion = localStorage.getItem('pl_data_version');
         const storedServices = localStorage.getItem('pl_services');
+        const cloudServices = localStorage.getItem('pl_services_cloud');
 
-        if (storedVersion !== DATA_VERSION || !storedServices) {
-            // Update data if version mismatch or no data
-            localStorage.setItem('pl_services', JSON.stringify(DEFAULT_SERVICES));
-            localStorage.setItem('pl_data_version', DATA_VERSION);
-            return DEFAULT_SERVICES;
+        // Logic: 
+        // 1. If we have cloud cache, use it (it's the master truth)
+        // 2. If not, use local storage
+        // 3. Last resort: DEFAULT_SERVICES
+
+        let servicesData = cloudServices || storedServices;
+
+        if (servicesData) {
+            try {
+                return JSON.parse(servicesData);
+            } catch (e) {
+                console.error("Error parsing services data", e);
+            }
         }
 
-        return JSON.parse(storedServices);
+        return DEFAULT_SERVICES;
     },
     saveServices: (services) => {
         localStorage.setItem('pl_services', JSON.stringify(services));
+        localStorage.setItem('pl_services_cloud', JSON.stringify(services)); // Keep cloud cache updated
+    },
+    syncFromCloud: async () => {
+        const settings = DataManager.getSettings();
+        if (!settings.googleScriptUrl) return;
+
+        try {
+            // Add timestamp to avoid browser cache
+            const response = await fetch(`${settings.googleScriptUrl}?action=getServices&t=${Date.now()}`);
+            const remoteServices = await response.json();
+            // Safety check: only sync if we got a valid array
+            if (remoteServices && Array.isArray(remoteServices) && remoteServices.length > 5) {
+                const localStr = localStorage.getItem('pl_services');
+                const remoteStr = JSON.stringify(remoteServices);
+
+                // Only overwrite if it's actually different
+                if (localStr !== remoteStr) {
+                    localStorage.setItem('pl_services_cloud', remoteStr);
+                    localStorage.setItem('pl_services', remoteStr);
+                    console.log('Services updated from cloud');
+                }
+            }
+        } catch (error) {
+            console.error('Initial Cloud Sync Error (Services):', error);
+        }
     },
     getAdmin: () => {
         const stored = localStorage.getItem('pl_admin');
@@ -135,17 +168,71 @@ const DataManager = {
     },
     getSettings: () => {
         const stored = localStorage.getItem('pl_settings');
-        let settings = stored ? JSON.parse(stored) : DEFAULT_SETTINGS;
-        // Ensure new fields exist for backward compatibility
-        if (!settings.blockedDays) settings.blockedDays = [];
-        if (!settings.blockedRanges) settings.blockedRanges = [];
-        if (!settings.blockedCategories) settings.blockedCategories = [];
-        if (!settings.categoryModes) settings.categoryModes = {};
-        if (!settings.allowedDates) settings.allowedDates = [];
-        return settings;
+        const cloudSettings = localStorage.getItem('pl_settings_cloud');
+        let settings;
+
+        try {
+            const data = cloudSettings || stored;
+            settings = data ? JSON.parse(data) : {};
+        } catch (e) {
+            settings = {};
+        }
+
+        // Merge with defaults to ensure all fields exist
+        const finalSettings = {};
+        for (let key in DEFAULT_SETTINGS) {
+            finalSettings[key] = settings[key] !== undefined ? settings[key] : DEFAULT_SETTINGS[key];
+        }
+
+        // If no URL is saved in memory, use the one written in the code (GitHub)
+        if (!finalSettings.googleScriptUrl || finalSettings.googleScriptUrl === '') {
+            finalSettings.googleScriptUrl = DEFAULT_SETTINGS.googleScriptUrl;
+        }
+
+        // Ensure mandatory fields
+        if (!finalSettings.blockedDays) finalSettings.blockedDays = [];
+        if (!finalSettings.blockedRanges) finalSettings.blockedRanges = [];
+        if (!finalSettings.blockedCategories) finalSettings.blockedCategories = [];
+        if (!finalSettings.categoryModes) finalSettings.categoryModes = {};
+        if (!finalSettings.allowedDates) finalSettings.allowedDates = [];
+
+        return finalSettings;
     },
     saveSettings: (settings) => {
-        localStorage.setItem('pl_settings', JSON.stringify(settings));
+        try {
+            localStorage.setItem('pl_settings', JSON.stringify(settings));
+            localStorage.setItem('pl_settings_cloud', JSON.stringify(settings)); // Keep cloud cache updated
+
+            // If the URL changes, trigger an immediate sync
+            if (settings.googleScriptUrl) {
+                DataManager.syncFromCloud();
+                DataManager.syncSettingsFromCloud();
+            }
+        } catch (e) {
+            console.error('Storage Error:', e);
+        }
+    },
+    syncSettingsFromCloud: async () => {
+        const settings = DataManager.getSettings();
+        if (!settings.googleScriptUrl) return;
+
+        try {
+            // Add timestamp to avoid browser cache
+            const response = await fetch(`${settings.googleScriptUrl}?action=getSettings&t=${Date.now()}`);
+            const remoteSettings = await response.json();
+            if (remoteSettings && (remoteSettings.adminPhone || remoteSettings.googleScriptUrl)) {
+                const localStr = JSON.stringify(settings);
+                const remoteStr = JSON.stringify(remoteSettings);
+
+                if (localStr !== remoteStr) {
+                    localStorage.setItem('pl_settings_cloud', remoteStr);
+                    localStorage.setItem('pl_settings', remoteStr);
+                    console.log('Settings updated from cloud');
+                }
+            }
+        } catch (error) {
+            console.error('Initial Cloud Sync Error (Settings):', error);
+        }
     },
     getBookings: () => {
         const stored = localStorage.getItem('pl_bookings');

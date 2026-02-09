@@ -10,6 +10,10 @@ const App = {
     },
 
     init: () => {
+        // Automatic Cloud Sync on load
+        DataManager.syncFromCloud();
+        DataManager.syncSettingsFromCloud();
+
         const dateInput = document.getElementById('booking-date');
         if (dateInput) {
             const today = new Date().toISOString().split('T')[0];
