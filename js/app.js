@@ -9,10 +9,23 @@ const App = {
         lastScrollY: 0
     },
 
-    init: () => {
+    init: async () => {
         // Automatic Cloud Sync on load
-        DataManager.syncFromCloud();
-        DataManager.syncSettingsFromCloud();
+        try {
+            const servicesChanged = await DataManager.syncFromCloud();
+            const settingsChanged = await DataManager.syncSettingsFromCloud();
+
+            // If we are on home/services and data changed, refresh view
+            if (servicesChanged) {
+                if (App.state.currentScreen === 'home') {
+                    // Home doesn't need re-render unless we add category count etc
+                } else if (App.state.currentScreen === 'services') {
+                    App.renderServices(App.state.selectedType);
+                }
+            }
+        } catch (e) {
+            console.warn('Initial sync failed, using local data');
+        }
 
         const dateInput = document.getElementById('booking-date');
         if (dateInput) {

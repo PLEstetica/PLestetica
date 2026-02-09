@@ -137,7 +137,7 @@ const DataManager = {
     },
     syncFromCloud: async () => {
         const settings = DataManager.getSettings();
-        if (!settings.googleScriptUrl) return;
+        if (!settings.googleScriptUrl) return false;
 
         try {
             // Add timestamp to avoid browser cache
@@ -153,11 +153,13 @@ const DataManager = {
                     localStorage.setItem('pl_services_cloud', remoteStr);
                     localStorage.setItem('pl_services', remoteStr);
                     console.log('Services updated from cloud');
+                    return true;
                 }
             }
         } catch (error) {
             console.error('Initial Cloud Sync Error (Services):', error);
         }
+        return false;
     },
     getAdmin: () => {
         const stored = localStorage.getItem('pl_admin');
@@ -214,7 +216,7 @@ const DataManager = {
     },
     syncSettingsFromCloud: async () => {
         const settings = DataManager.getSettings();
-        if (!settings.googleScriptUrl) return;
+        if (!settings.googleScriptUrl) return false;
 
         try {
             // Add timestamp to avoid browser cache
@@ -228,11 +230,13 @@ const DataManager = {
                     localStorage.setItem('pl_settings_cloud', remoteStr);
                     localStorage.setItem('pl_settings', remoteStr);
                     console.log('Settings updated from cloud');
+                    return true;
                 }
             }
         } catch (error) {
             console.error('Initial Cloud Sync Error (Settings):', error);
         }
+        return false;
     },
     getBookings: () => {
         const stored = localStorage.getItem('pl_bookings');
