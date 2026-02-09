@@ -123,7 +123,14 @@ const DataManager = {
 
         if (servicesData) {
             try {
-                return JSON.parse(servicesData);
+                let services = JSON.parse(servicesData);
+                // Final safety: Filter out any potential internal duplicates by ID
+                const seenIds = new Set();
+                return services.filter(s => {
+                    const isDuplicate = seenIds.has(s.id);
+                    seenIds.add(s.id);
+                    return !isDuplicate;
+                });
             } catch (e) {
                 console.error("Error parsing services data", e);
             }

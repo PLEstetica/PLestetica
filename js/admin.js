@@ -314,10 +314,13 @@ const Admin = {
         try {
             const response = await fetch(`${settings.googleScriptUrl}?action=getServices&t=${Date.now()}`);
             const remoteServices = await response.json();
-            if (remoteServices && remoteServices.length > 5) { // Safety check
-                DataManager.saveServices(remoteServices);
+            if (remoteServices && Array.isArray(remoteServices) && remoteServices.length > 5) { // Safety check
+                // We overwrite, we don't merge, to avoid duplicates
+                localStorage.setItem('pl_services_cloud', JSON.stringify(remoteServices));
+                localStorage.setItem('pl_services', JSON.stringify(remoteServices));
+
                 Admin.renderServicesList();
-                alert('Servicios importados con éxito.');
+                alert('Servicios importados con éxito desde la nube.');
             } else {
                 alert('No se encontraron servicios válidos para importar.');
             }
