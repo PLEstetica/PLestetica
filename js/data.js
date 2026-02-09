@@ -86,7 +86,7 @@ const DEFAULT_ADMIN = {
 const DEFAULT_SETTINGS = {
     adminPhone: '5491100000000',
     whatsappMessage: 'Hola, quisiera confirmar mi turno para {servicios} el día {fecha} a las {hora}. Total: {total}',
-    googleScriptUrl: '',
+    googleScriptUrl: 'https://script.google.com/macros/s/AKfycbwm2Z2_46_X-QOWcqfZ4xFDUdH-irRy-fHnYtVV02KUDgHCUVfMY7LZ6S_fMicGjIm9yQ/exec',
     blockedDays: [],
     blockedRanges: [], // Array of { date, start, end }
     blockedCategories: [], // Array of { date, category }
